@@ -18,6 +18,6 @@ export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }
 
-export function UploadPhoto(arg1, arg2, arg3) {
-  return window['go']['main']['App']['UploadPhoto'](arg1, arg2, arg3);
+export function UploadPhoto(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['UploadPhoto'](arg1, arg2, arg3, arg4);
 }
