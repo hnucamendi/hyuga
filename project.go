@@ -1,14 +1,24 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	rpg "github.com/kevinburke/go-random-project-generator"
+)
+
+type PhotoType string
+
+const (
+	SHEET  PhotoType = "sheet"
+	CUTOUT PhotoType = "cutout"
 )
 
 type Project struct {
@@ -136,6 +146,37 @@ func (a *App) DeleteProject(id string) error {
 	err = os.RemoveAll(path)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId string) error {
+	assetId := uuid.NewString()
+	data, err := base64.StdEncoding.DecodeString(base64Data)
+	if err != nil {
+		return fmt.Errorf("failed to decode base64: %w", err)
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return err
+	}
+
+	dirPath := filepath.Join(base, "projects", projectId, assetId, "images")
+	err = os.MkdirAll(dirPath, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create project path: %w", err)
+	}
+
+	timestamp := time.Now().Format("20060102-150405")
+	filename := fmt.Sprintf("%s-%s.jpg", strings.ToLower(string(imageType)), timestamp)
+	filePath := filepath.Join(dirPath, filename)
+
+	// 4. Write file
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write image: %w", err)
 	}
 
 	return nil
