@@ -2,7 +2,10 @@ module pdf-gen
 
 go 1.23
 
-require github.com/wailsapp/wails/v2 v2.10.2
+require (
+	github.com/kevinburke/go-random-project-generator v0.0.0-20160904053023-8d7524da57ef
+	github.com/wailsapp/wails/v2 v2.10.2
+)
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
