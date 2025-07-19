@@ -6,6 +6,14 @@ export function CreateProject() {
   return window['go']['main']['App']['CreateProject']();
 }
 
+export function DeleteProject(arg1) {
+  return window['go']['main']['App']['DeleteProject'](arg1);
+}
+
+export function LoadProject(arg1) {
+  return window['go']['main']['App']['LoadProject'](arg1);
+}
+
 export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }

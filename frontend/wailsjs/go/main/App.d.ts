@@ -4,4 +4,8 @@ import {main} from '../models';
 
 export function CreateProject():Promise<void>;
 
+export function DeleteProject(arg1:string):Promise<void>;
+
+export function LoadProject(arg1:string):Promise<main.Project>;
+
 export function LoadProjects():Promise<Array<main.Project>>;
