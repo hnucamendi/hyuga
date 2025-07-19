@@ -1,27 +1,41 @@
-import {useState} from 'react';
-import logo from './assets/images/logo-universal.png';
+import { useState } from 'react';
 import './App.css';
-import {Greet} from "../wailsjs/go/main/App";
+import { Greet } from "../wailsjs/go/main/App";
+import Card from "./components/Card"
+import Button from "./components/Button"
+import "./styles/header.css"
 
 function App() {
-    const [resultText, setResultText] = useState("Please enter your name below 👇");
-    const [name, setName] = useState('');
-    const updateName = (e: any) => setName(e.target.value);
-    const updateResultText = (result: string) => setResultText(result);
+  const handleCreateNewProject = () => {
+    console.log("clicked")
+  }
 
-    function greet() {
-        Greet(name).then(updateResultText);
-    }
+  const handleOpenProject = () => {
+    console.log("clicked")
+  }
 
-    return (
-        <div id="App">
-            <img src={logo} id="logo" alt="logo"/>
-            <div id="input" className="input-box">
-                <input id="name" className="input" onChange={updateName} autoComplete="off" name="input" type="text"/>
-                <button className="btn" onClick={greet}>Greet</button>
-            </div>
-        </div>
-    )
+  return (
+    <div>
+      <div className='header'>
+        <h1>Hyūga</h1>
+        <Button
+          label="crear proyecto"
+          onClick={handleCreateNewProject}
+          type="button"
+        />
+      </div>
+      <Card
+        title="Proyecto Uno"
+        content={
+          <Button
+            label="Abrir"
+            onClick={handleCreateNewProject}
+            type="button"
+          />
+        }
+        footer="" />
+    </div>
+  )
 }
 
 export default App
