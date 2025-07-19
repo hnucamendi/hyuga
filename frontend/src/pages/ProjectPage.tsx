@@ -1,7 +1,7 @@
 import Header from "../components/Header"
 import { useParams } from "react-router-dom"
 import type { main } from "../../wailsjs/go/models";
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { LoadProject, UploadPhoto } from "../../wailsjs/go/main/App"
 import Aside from "../components/Aside";
 import Button from "../components/Button";
@@ -9,6 +9,7 @@ import Button from "../components/Button";
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const [project, setProject] = useState<main.Project>()
+  const attributeId = useRef(0)
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -39,11 +40,11 @@ function ProjectPage() {
         try {
           switch (type) {
             case "sheet": {
-              await UploadPhoto(base64, "sheet", projectId) // send base64 and custom type to backend
+              await UploadPhoto(base64, "sheet", projectId, attributeId.current) // send base64 and custom type to backend
               break
             }
             case "cutout": {
-              await UploadPhoto(base64, "cutout", projectId) // send base64 and custom type to backend
+              await UploadPhoto(base64, "cutout", projectId, attributeId.current) // send base64 and custom type to backend
               break
             }
           }
@@ -53,7 +54,6 @@ function ProjectPage() {
       }
       reader.readAsDataURL(file)
     }
-
     input.click()
   }
 

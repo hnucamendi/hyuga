@@ -151,8 +151,7 @@ func (a *App) DeleteProject(id string) error {
 	return nil
 }
 
-func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId string) error {
-	assetId := uuid.NewString()
+func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId string, attributeId string) error {
 	data, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
 		return fmt.Errorf("failed to decode base64: %w", err)
@@ -163,7 +162,7 @@ func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId stri
 		return err
 	}
 
-	dirPath := filepath.Join(base, "projects", projectId, assetId, "images")
+	dirPath := filepath.Join(base, "projects", projectId, attributeId, "images")
 	err = os.MkdirAll(dirPath, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to create project path: %w", err)
