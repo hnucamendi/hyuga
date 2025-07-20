@@ -1,16 +1,29 @@
+import React from "react";
 import Button from "./Button";
 import { AssetGroup } from "../pages/ProjectPage";
 
 interface AssetCardProps {
   asset: AssetGroup;
+  editable: boolean;
   onChange: (updates: Partial<AssetGroup>) => void;
   onUpload: (type: "sheet" | "cutout", id: string) => void;
   onSave: () => void;
   onRemove: () => void;
 }
 
-export default function AssetCard({ asset, onRemove }: AssetCardProps) {
-  const fieldStyle = { fontSize: "1rem", padding: "4px 0", minWidth: "8em" };
+export default function AssetCard({
+  asset,
+  editable,
+  onChange,
+  onUpload,
+  onSave,
+  onRemove,
+}: AssetCardProps) {
+  const fieldStyle: React.CSSProperties = {
+    fontSize: "1rem",
+    padding: "4px 0",
+    minWidth: "8em",
+  };
 
   return (
     <div
@@ -20,18 +33,46 @@ export default function AssetCard({ asset, onRemove }: AssetCardProps) {
         marginBottom: "1em",
         borderRadius: "8px",
         backgroundColor: "#fafafa",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75em",
       }}
     >
       <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
         Asset <span style={{ fontWeight: "normal" }}>{asset.id}</span>
       </div>
-      <div style={fieldStyle}>
-        <strong>Section:</strong> {asset.section}
-      </div>
-      <div style={fieldStyle}>
-        <strong>Page Number:</strong> {asset.pageNumber}
-      </div>
 
+      {/* Section Field */}
+      {editable ? (
+        <input
+          style={fieldStyle}
+          type="text"
+          placeholder="Section"
+          value={asset.section || ""}
+          onChange={(e) => onChange({ section: e.target.value })}
+        />
+      ) : (
+        <div style={fieldStyle}>
+          <strong>Section:</strong> {asset.section}
+        </div>
+      )}
+
+      {/* Page Number Field */}
+      {editable ? (
+        <input
+          style={fieldStyle}
+          type="number"
+          placeholder="Page Number"
+          value={asset.pageNumber || ""}
+          onChange={(e) => onChange({ pageNumber: e.target.value })}
+        />
+      ) : (
+        <div style={fieldStyle}>
+          <strong>Page Number:</strong> {asset.pageNumber}
+        </div>
+      )}
+
+      {/* Images & Actions */}
       <div
         style={{
           display: "flex",
@@ -39,6 +80,7 @@ export default function AssetCard({ asset, onRemove }: AssetCardProps) {
           alignItems: "center",
           gap: "1.5em",
           marginTop: "1em",
+          flexWrap: "wrap",
         }}
       >
         {asset.sheet && (
@@ -73,8 +115,32 @@ export default function AssetCard({ asset, onRemove }: AssetCardProps) {
             />
           </div>
         )}
-        <div style={{ marginLeft: "auto" }}>
-          <Button type="button" label="Delete" onClick={onRemove} />
+        <div
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5em",
+          }}
+        >
+          {editable && (
+            <Button
+              type="button"
+              label="Save"
+              onClick={onSave}
+              disabled={
+                !asset.pageNumber ||
+                !asset.section ||
+                !asset.sheet ||
+                !asset.cutout
+              }
+            />
+          )}
+          <Button
+            type="button"
+            label={editable ? "Remove" : "Delete"}
+            onClick={onRemove}
+          />
         </div>
       </div>
     </div>
