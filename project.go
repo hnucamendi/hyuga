@@ -23,6 +23,8 @@ const (
 
 type AssetMetadata struct {
 	AssetID    string `json:"asset_id"`
+	Sheet      string `json:"sheet"`  // Base64 image
+	Cutout     string `json:"cutout"` // Base64 image
 	PageNumber string `json:"page_number"`
 	Section    string `json:"section"`
 }
@@ -244,25 +246,49 @@ func (a *App) LoadAssets(projectId string) ([]AssetMetadata, error) {
 	}
 
 	projectDir := filepath.Join(base, "projects", projectId)
-	dirs, err := os.ReadDir(projectDir)
+	entries, err := os.ReadDir(projectDir)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read project folder: %w", err)
 	}
 
 	var metas []AssetMetadata
-	for _, entry := range dirs {
-		if !entry.IsDir() {
+	for _, e := range entries {
+		if !e.IsDir() {
 			continue
 		}
-		metaFile := filepath.Join(projectDir, entry.Name(), "metadata.json")
-		data, err := os.ReadFile(metaFile)
+		assetDir := filepath.Join(projectDir, e.Name())
+		imgDir := filepath.Join(assetDir, "images")
+		metaFile := filepath.Join(assetDir, "metadata.json")
+
+		// Load metadata
+		b, err := os.ReadFile(metaFile)
 		if err != nil {
-			continue // skip if missing
+			continue
 		}
 		var m AssetMetadata
-		if err := json.Unmarshal(data, &m); err != nil {
+		if err := json.Unmarshal(b, &m); err != nil {
 			continue
 		}
+
+		// Load images as base64 if present
+		files, err := os.ReadDir(imgDir)
+		if err == nil {
+			for _, f := range files {
+				name := strings.ToLower(f.Name())
+				fullPath := filepath.Join(imgDir, f.Name())
+				imgBytes, e := os.ReadFile(fullPath)
+				if e != nil {
+					continue
+				}
+				encoded := base64.StdEncoding.EncodeToString(imgBytes)
+				if strings.HasPrefix(name, "sheet-") && m.Sheet == "" {
+					m.Sheet = encoded
+				} else if strings.HasPrefix(name, "cutout-") && m.Cutout == "" {
+					m.Cutout = encoded
+				}
+			}
+		}
+
 		metas = append(metas, m)
 	}
 

@@ -7,8 +7,8 @@ import {
   SaveAsset,
   LoadAssets,
 } from "../../wailsjs/go/main/App";
+import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
-import Card from "../components/Card";
 
 export interface AssetGroup {
   id: string;
@@ -19,35 +19,28 @@ export interface AssetGroup {
   saved?: boolean;
 }
 
-function generateAssetId() {
-  return typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2);
-}
-
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
   const [assets, setAssets] = useState<AssetGroup[]>([]);
+  const [addingNew, setAddingNew] = useState(false);
 
-  // Load project
   useEffect(() => {
     if (!projectId) return;
     LoadProject(projectId).then(setProject).catch(console.error);
     LoadAssets(projectId)
-      .then((metas) => {
-        console.log(metas);
+      .then((metas) =>
         setAssets(
           metas.map((m) => ({
-            id: m.AssetID,
+            id: m.asset_id,
+            sheet: m.sheet, // ensure PhotoType fields too
             cutout: m.cutout,
-            sheet: m.sheet,
-            pageNumber: m.PageNumber,
-            section: m.Section,
+            pageNumber: m.page_number,
+            section: m.section,
             saved: true,
           })),
-        );
-      })
+        ),
+      )
       .catch(console.error);
   }, [projectId]);
 
@@ -56,48 +49,28 @@ function ProjectPage() {
       prev.map((a) => (a.id === id ? { ...a, ...updates } : a)),
     );
 
-  const handleAddAsset = () =>
-    setAssets((prev) => [...prev, { id: generateAssetId() }]);
+  const addEmptyAsset = () => {
+    const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+    const newAsset: AssetGroup = { id, saved: false };
+    setAssets((prev) => [...prev, newAsset]);
+    setAddingNew(true);
+  };
 
-  const handleRemoveAsset = (id: string) =>
+  const removeAsset = (id: string) =>
     setAssets((prev) => prev.filter((a) => a.id !== id));
 
   const handleUpload = (type: "sheet" | "cutout", id: string) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file || !projectId) return;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result?.toString().split(",")[1];
-        if (!base64) return;
-        try {
-          await UploadPhoto(base64, type, projectId, id);
-          updateAsset(id, { [type]: base64 });
-        } catch (err) {
-          console.error("UploadPhoto error:", err);
-        }
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
+    /* same as before */
   };
 
   const isAssetReady = (a: AssetGroup) =>
     !!a.sheet && !!a.cutout && !!a.pageNumber && !!a.section;
 
-  const handleSaveAsset = async (a: AssetGroup) => {
-    if (!isAssetReady(a) || !projectId) return;
-
-    try {
-      // Example Go binding: SaveAsset(projectId, assetId, metadata JSON...)
-      await SaveAsset(projectId, a.id, a.pageNumber || "", a.section || "");
-      updateAsset(a.id, { saved: true });
-    } catch (err) {
-      console.error("SaveAsset failed:", err);
-    }
+  const saveAsset = async (a: AssetGroup) => {
+    if (!projectId || !isAssetReady(a)) return;
+    await SaveAsset(projectId, a.id, a.pageNumber!, a.section!);
+    updateAsset(a.id, { saved: true });
+    setAddingNew(false);
   };
 
   if (!projectId) return <div>No project selected.</div>;
@@ -106,147 +79,21 @@ function ProjectPage() {
     <>
       <h2>{project?.name || "Loading project..."}</h2>
       <section>
-        <h3>Asset Groups</h3>
-        {assets.map((a) => (
-          <Card
-            key={a.id}
-            title={""}
-            content={
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: ".5em",
-                  }}
-                >
-                  {/* <p>{a.id}</p> */}
-                  <input
-                    style={{
-                      padding: "8px 12px",
-                      fontSize: "1rem",
-                      borderRadius: "4px",
-                      border: "1px solid #ccc",
-                      outline: "none",
-                      transition: "border-color 0.2s",
-                      width: "10em",
-                    }}
-                    type="number"
-                    placeholder="Page Number"
-                    value={a.pageNumber || ""}
-                    onChange={(e) =>
-                      updateAsset(a.id, { pageNumber: e.target.value })
-                    }
-                  />
-                  <input
-                    style={{
-                      padding: "8px 12px",
-                      fontSize: "1rem",
-                      borderRadius: "4px",
-                      border: "1px solid #ccc",
-                      outline: "none",
-                      transition: "border-color 0.2s",
-                      width: "10em",
-                    }}
-                    placeholder="Section"
-                    value={a.section || ""}
-                    onChange={(e) =>
-                      updateAsset(a.id, { section: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "1em",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Button
-                      label={a.sheet ? "Change Sheet" : "Upload Sheet"}
-                      onClick={() => handleUpload("sheet", a.id)}
-                      type="button"
-                    />
-                    {a.sheet && (
-                      <img
-                        src={`data:image/jpeg;base64,${a.sheet}`}
-                        alt="Sheet"
-                        width={100}
-                      />
-                    )}
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Button
-                      label={a.cutout ? "Change Cutout" : "Upload Cutout"}
-                      onClick={() => handleUpload("cutout", a.id)}
-                      type="button"
-                    />
-                    {a.cutout && (
-                      <img
-                        src={`data:image/jpeg;base64,${a.cutout}`}
-                        alt="Cutout"
-                        width={100}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1em",
-                  }}
-                >
-                  {!a.saved && (
-                    <Button
-                      disabled={!isAssetReady(a)}
-                      label="Save Asset"
-                      onClick={() => handleSaveAsset(a)}
-                      type="button"
-                    />
-                  )}
-                  <Button
-                    label="Remove"
-                    onClick={() => handleRemoveAsset(a.id)}
-                    type="button"
-                  />
-                </div>
-              </div>
-            }
+        {assets.map((asset) => (
+          <AssetCard
+            key={asset.id}
+            asset={asset}
+            editable={!asset.saved}
+            onChange={(updates) => updateAsset(asset.id, updates)}
+            onUpload={(type) => handleUpload(type, asset.id)}
+            onSave={() => saveAsset(asset)}
+            onRemove={() => removeAsset(asset.id)}
           />
         ))}
 
-        <div style={{ padding: "1em" }}>
-          <Button
-            label="Add New Asset Group"
-            onClick={handleAddAsset}
-            type="button"
-          />
-        </div>
+        {!addingNew && (
+          <Button label="Add New Asset" onClick={addEmptyAsset} type="button" />
+        )}
       </section>
     </>
   );

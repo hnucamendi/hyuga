@@ -2,6 +2,8 @@ export namespace main {
 	
 	export class AssetMetadata {
 	    asset_id: string;
+	    sheet: string;
+	    cutout: string;
 	    page_number: string;
 	    section: string;
 	
@@ -12,6 +14,8 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.asset_id = source["asset_id"];
+	        this.sheet = source["sheet"];
+	        this.cutout = source["cutout"];
 	        this.page_number = source["page_number"];
 	        this.section = source["section"];
 	    }

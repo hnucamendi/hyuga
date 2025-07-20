@@ -4,7 +4,6 @@ import { AssetGroup } from "../pages/ProjectPage";
 
 interface AssetCardProps {
   asset: AssetGroup;
-  editable: boolean;
   onChange: (updates: Partial<AssetGroup>) => void;
   onUpload: (type: "sheet" | "cutout", id: string) => void;
   onSave: () => void;
@@ -13,12 +12,19 @@ interface AssetCardProps {
 
 export default function AssetCard({
   asset,
-  editable,
   onChange,
-  onUpload,
-  onSave,
   onRemove,
 }: AssetCardProps) {
+  const fieldStyle: React.CSSProperties = {
+    padding: "8px 12px",
+    fontSize: "1rem",
+    borderRadius: "4px",
+    border: "none",
+    outline: "none",
+    transition: "border-color 0.2s",
+    minWidth: "6em",
+    background: "transparent",
+  };
   return (
     <div
       style={{ border: "1px solid #ddd", padding: "1em", marginBottom: "1em" }}
@@ -27,30 +33,22 @@ export default function AssetCard({
         <strong>Asset {asset.id}</strong>
       </div>
 
-      <input
-        type="number"
-        disabled={!editable}
-        placeholder="Page Number"
-        value={asset.pageNumber || ""}
-        onChange={(e) => onChange({ pageNumber: e.target.value })}
-      />
+      <div style={{ ...fieldStyle, padding: "8px 0" }}>
+        <span style={{ fontWeight: "bold", marginRight: "0.5em" }}>
+          Section:
+        </span>
+        {asset.section}
+      </div>
 
-      <input
-        type="text"
-        disabled={!editable}
-        placeholder="Section"
-        value={asset.section || ""}
-        onChange={(e) => onChange({ section: e.target.value })}
-      />
+      <div style={{ ...fieldStyle, padding: "8px 0" }}>
+        <span style={{ fontWeight: "bold", marginRight: "0.5em" }}>
+          Page Number:
+        </span>
+        {asset.pageNumber}
+      </div>
 
       <div style={{ display: "flex", gap: "1em", marginTop: ".5em" }}>
         <div>
-          <Button
-            type="button"
-            disabled={!editable}
-            label={asset.sheet ? "Change Sheet" : "Upload Sheet"}
-            onClick={() => onUpload("sheet", asset.id)}
-          />
           {asset.sheet && (
             <img
               src={`data:image/jpeg;base64,${asset.sheet}`}
@@ -61,12 +59,6 @@ export default function AssetCard({
         </div>
 
         <div>
-          <Button
-            type="button"
-            disabled={!editable}
-            label={asset.cutout ? "Change Cutout" : "Upload Cutout"}
-            onClick={() => onUpload("cutout", asset.id)}
-          />
           {asset.cutout && (
             <img
               src={`data:image/jpeg;base64,${asset.cutout}`}
@@ -77,24 +69,7 @@ export default function AssetCard({
         </div>
 
         <div>
-          {editable && (
-            <Button
-              type="button"
-              label="Save"
-              onClick={onSave}
-              disabled={
-                !asset.pageNumber ||
-                !asset.section ||
-                !asset.sheet ||
-                !asset.cutout
-              }
-            />
-          )}
-          <Button
-            type="button"
-            label={editable ? "Remove" : "Delete"}
-            onClick={onRemove}
-          />
+          <Button type="button" label={"Delete"} onClick={onRemove} />
         </div>
       </div>
     </div>
