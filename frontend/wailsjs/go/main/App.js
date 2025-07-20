@@ -10,6 +10,10 @@ export function DeleteProject(arg1) {
   return window['go']['main']['App']['DeleteProject'](arg1);
 }
 
+export function LoadAssets(arg1) {
+  return window['go']['main']['App']['LoadAssets'](arg1);
+}
+
 export function LoadProject(arg1) {
   return window['go']['main']['App']['LoadProject'](arg1);
 }

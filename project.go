@@ -232,3 +232,39 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 
 	return nil
 }
+
+func (a *App) LoadAssets(projectId string) ([]AssetMetadata, error) {
+	if projectId == "" {
+		return nil, fmt.Errorf("projectId required")
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	projectDir := filepath.Join(base, "projects", projectId)
+	dirs, err := os.ReadDir(projectDir)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var metas []AssetMetadata
+	for _, entry := range dirs {
+		if !entry.IsDir() {
+			continue
+		}
+		metaFile := filepath.Join(projectDir, entry.Name(), "metadata.json")
+		data, err := os.ReadFile(metaFile)
+		if err != nil {
+			continue // skip if missing
+		}
+		var m AssetMetadata
+		if err := json.Unmarshal(data, &m); err != nil {
+			continue
+		}
+		metas = append(metas, m)
+	}
+
+	return metas, nil
+}
