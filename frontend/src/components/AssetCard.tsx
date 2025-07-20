@@ -83,38 +83,63 @@ export default function AssetCard({
           flexWrap: "wrap",
         }}
       >
-        {asset.sheet && (
-          <div
-            style={{
-              padding: "4px",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-              borderRadius: "4px",
-            }}
-          >
-            <img
-              src={`data:image/jpeg;base64,${asset.sheet}`}
-              alt="Sheet"
-              width={120}
-              style={{ display: "block", borderRadius: "4px" }}
+        {/* Upload / Display Sheet */}
+        <div style={{ textAlign: "center" }}>
+          {editable && (
+            <Button
+              type="button"
+              label={asset.sheet ? "Change Sheet" : "Upload Sheet"}
+              onClick={() => onUpload("sheet", asset.id)}
             />
-          </div>
-        )}
-        {asset.cutout && (
-          <div
-            style={{
-              padding: "4px",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-              borderRadius: "4px",
-            }}
-          >
-            <img
-              src={`data:image/jpeg;base64,${asset.cutout}`}
-              alt="Cutout"
-              width={120}
-              style={{ display: "block", borderRadius: "4px" }}
+          )}
+          {asset.sheet && (
+            <div
+              style={{
+                marginTop: "0.5em",
+                padding: "4px",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                borderRadius: "4px",
+              }}
+            >
+              <img
+                src={`data:image/jpeg;base64,${asset.sheet}`}
+                alt="Sheet"
+                width={120}
+                style={{ display: "block", borderRadius: "4px" }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Upload / Display Cutout */}
+        <div style={{ textAlign: "center" }}>
+          {editable && (
+            <Button
+              type="button"
+              label={asset.cutout ? "Change Cutout" : "Upload Cutout"}
+              onClick={() => onUpload("cutout", asset.id)}
             />
-          </div>
-        )}
+          )}
+          {asset.cutout && (
+            <div
+              style={{
+                marginTop: "0.5em",
+                padding: "4px",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                borderRadius: "4px",
+              }}
+            >
+              <img
+                src={`data:image/jpeg;base64,${asset.cutout}`}
+                alt="Cutout"
+                width={120}
+                style={{ display: "block", borderRadius: "4px" }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Save / Remove Buttons */}
         <div
           style={{
             marginLeft: "auto",
