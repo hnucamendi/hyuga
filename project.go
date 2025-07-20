@@ -21,6 +21,12 @@ const (
 	CUTOUT PhotoType = "cutout"
 )
 
+type AssetMetadata struct {
+	AssetID    string `json:"asset_id"`
+	PageNumber string `json:"page_number"`
+	Section    string `json:"section"`
+}
+
 type Project struct {
 	Id        string            `json:"id"`
 	Name      string            `json:"name"`
@@ -176,6 +182,52 @@ func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId stri
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write image: %w", err)
+	}
+
+	return nil
+}
+
+func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, section string) error {
+	if projectId == "" || assetId == "" {
+		return fmt.Errorf("projectId and assetId are required")
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return err
+	}
+
+	// Load existing project.json
+	projectPath := filepath.Join(base, "projects", projectId, "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return fmt.Errorf("failed to read project.json: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON: %w", err)
+	}
+
+	metaPath := filepath.Join(base, "projects", projectId, assetId, "metadata.json")
+	if err := os.MkdirAll(filepath.Dir(metaPath), 0755); err != nil {
+		return fmt.Errorf("failed to create metadata dir: %w", err)
+	}
+
+	meta := AssetMetadata{
+		AssetID:    assetId,
+		PageNumber: pageNumber,
+		Section:    section,
+	}
+	data, err := json.MarshalIndent(meta, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	fmt.Println(meta)
+
+	if err := os.WriteFile(metaPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
 	return nil

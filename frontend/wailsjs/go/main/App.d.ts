@@ -10,4 +10,6 @@ export function LoadProject(arg1:string):Promise<main.Project>;
 
 export function LoadProjects():Promise<Array<main.Project>>;
 
+export function SaveAsset(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
 export function UploadPhoto(arg1:string,arg2:main.PhotoType,arg3:string,arg4:string):Promise<void>;

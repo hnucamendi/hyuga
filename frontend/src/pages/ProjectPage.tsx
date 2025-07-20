@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { main } from "../../wailsjs/go/models";
-import { LoadProject, UploadPhoto } from "../../wailsjs/go/main/App";
+import { LoadProject, UploadPhoto, SaveAsset } from "../../wailsjs/go/main/App";
 import Header from "../components/Header";
 import Aside from "../components/Aside";
 import Button from "../components/Button";
@@ -13,53 +13,37 @@ interface AssetGroup {
   cutout?: string;
   pageNumber?: string;
   section?: string;
+  saved?: boolean;
 }
 
 function generateAssetId() {
   return typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
+    : Math.random().toString(36).substring(2);
 }
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<main.Project | undefined>();
+  const [project, setProject] = useState<main.Project>();
   const [assets, setAssets] = useState<AssetGroup[]>([]);
 
-  // Load project metadata on mount or projectId change
+  // Load project
   useEffect(() => {
-    const fetchProject = async () => {
-      if (!projectId) return;
-      try {
-        const proj = await LoadProject(projectId);
-        setProject(proj);
-        // (Optional) load initial asset groups from proj if supported
-      } catch (err) {
-        console.error("LoadProject failed", err);
-      }
-    };
-    fetchProject();
+    if (!projectId) return;
+    LoadProject(projectId).then(setProject).catch(console.error);
   }, [projectId]);
 
-  // Generic updater for any asset field
-  const updateAsset = (id: string, updates: Partial<AssetGroup>) => {
+  const updateAsset = (id: string, updates: Partial<AssetGroup>) =>
     setAssets((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...updates } : a)),
     );
-  };
 
-  // Add a new, empty asset group
-  const handleAddAsset = () => {
-    const newId = generateAssetId();
-    setAssets((prev) => [...prev, { id: newId }]);
-  };
+  const handleAddAsset = () =>
+    setAssets((prev) => [...prev, { id: generateAssetId() }]);
 
-  // Remove asset group by ID
-  const handleRemoveAsset = (id: string) => {
+  const handleRemoveAsset = (id: string) =>
     setAssets((prev) => prev.filter((a) => a.id !== id));
-  };
 
-  // Handles sheet or cutout photo uploads for a specific asset group
   const handleUpload = (type: "sheet" | "cutout", id: string) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -69,13 +53,13 @@ function ProjectPage() {
       if (!file || !projectId) return;
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64str = reader.result?.toString().split(",")[1];
-        if (!base64str) return;
+        const base64 = reader.result?.toString().split(",")[1];
+        if (!base64) return;
         try {
-          await UploadPhoto(base64str, type, projectId, id);
-          updateAsset(id, { [type]: base64str });
+          await UploadPhoto(base64, type, projectId, id);
+          updateAsset(id, { [type]: base64 });
         } catch (err) {
-          console.error("Upload failed", err);
+          console.error("UploadPhoto error:", err);
         }
       };
       reader.readAsDataURL(file);
@@ -83,76 +67,109 @@ function ProjectPage() {
     input.click();
   };
 
-  if (!projectId) {
-    return <div>Error: No project ID provided.</div>;
-  }
+  const isAssetReady = (a: AssetGroup) =>
+    !!a.sheet && !!a.cutout && !!a.pageNumber && !!a.section;
+
+  const handleSaveAsset = async (a: AssetGroup) => {
+    if (!isAssetReady(a) || !projectId) return;
+
+    try {
+      // Example Go binding: SaveAsset(projectId, assetId, metadata JSON...)
+      await SaveAsset(
+        projectId,
+        a.id,
+        JSON.stringify({
+          pageNumber: a.pageNumber,
+          section: a.section,
+        }),
+      );
+      updateAsset(a.id, { saved: true });
+    } catch (err) {
+      console.error("SaveAsset failed:", err);
+    }
+  };
+
+  if (!projectId) return <div>No project selected.</div>;
 
   return (
     <>
       <Header projectId={projectId} />
-      <h2>{project?.name || "Cargando proyecto..."}</h2>
+      <h2>{project?.name || "Loading project..."}</h2>
       <Aside />
 
       <section>
-        <h3>Assets</h3>
-        {assets.map((asset) => (
+        <h3>Asset Groups</h3>
+        {assets.map((a) => (
           <Card
-            key={asset.id}
-            title={asset.id}
+            key={a.id}
+            title={`Asset: ${a.id}`}
             content={
               <div className="asset-group">
                 <Button
-                  label={asset.sheet ? "Reemplazar Hoja" : "Subir Hoja"}
-                  onClick={() => handleUpload("sheet", asset.id)}
+                  label={a.sheet ? "Change Sheet" : "Upload Sheet"}
+                  onClick={() => handleUpload("sheet", a.id)}
                   type="button"
                 />
-                {asset.sheet && (
+                {a.sheet && (
                   <img
-                    src={`data:image/jpeg;base64,${asset.sheet}`}
-                    alt="Hoja"
+                    src={`data:image/jpeg;base64,${a.sheet}`}
+                    alt="Sheet"
+                    width={100}
                   />
                 )}
 
                 <Button
-                  label={asset.cutout ? "Reemplazar Nota" : "Subir Nota"}
-                  onClick={() => handleUpload("cutout", asset.id)}
+                  label={a.cutout ? "Change Cutout" : "Upload Cutout"}
+                  onClick={() => handleUpload("cutout", a.id)}
                   type="button"
                 />
-                {asset.cutout && (
+                {a.cutout && (
                   <img
-                    src={`data:image/jpeg;base64,${asset.cutout}`}
-                    alt="Nota"
+                    src={`data:image/jpeg;base64,${a.cutout}`}
+                    alt="Cutout"
+                    width={100}
                   />
                 )}
 
                 <input
-                  type="text"
-                  placeholder="Número de página"
-                  value={asset.pageNumber || ""}
+                  placeholder="Page Number"
+                  value={a.pageNumber || ""}
                   onChange={(e) =>
-                    updateAsset(asset.id, { pageNumber: e.target.value })
+                    updateAsset(a.id, { pageNumber: e.target.value })
                   }
                 />
-
                 <input
-                  type="text"
-                  placeholder="Sección"
-                  value={asset.section || ""}
+                  placeholder="Section"
+                  value={a.section || ""}
                   onChange={(e) =>
-                    updateAsset(asset.id, { section: e.target.value })
+                    updateAsset(a.id, { section: e.target.value })
                   }
                 />
 
-                <Button
-                  label="Eliminar Asset"
-                  type="button"
-                  onClick={() => handleRemoveAsset(asset.id)}
-                />
+                <div className="asset-actions">
+                  {isAssetReady(a) && !a.saved && (
+                    <Button
+                      label="Save Asset"
+                      onClick={() => handleSaveAsset(a)}
+                      type="button"
+                    />
+                  )}
+                  <Button
+                    label="Remove"
+                    onClick={() => handleRemoveAsset(a.id)}
+                    type="button"
+                  />
+                </div>
               </div>
             }
           />
         ))}
-        <Button label="Añadir Asset" onClick={handleAddAsset} type="button" />
+
+        <Button
+          label="Add New Asset Group"
+          onClick={handleAddAsset}
+          type="button"
+        />
       </section>
     </>
   );
