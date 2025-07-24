@@ -1,90 +1,42 @@
-import React from "react";
+import { useState } from "react";
 import Button from "./Button";
-import { AssetGroup } from "../pages/ProjectPage";
+import { main } from "../../wailsjs/go/models";
+import "../styles/assetcard.css";
+import Typography from "./Typography";
+import AssetCardInput from "./AssetCardInput";
+import AssetCardModal from "./AssetCardModal";
 
 interface AssetCardProps {
-  asset: AssetGroup;
+  asset: main.AssetMetadata;
   editable: boolean;
-  onChange: (updates: Partial<AssetGroup>) => void;
   onUpload: (type: "sheet" | "cutout", id: string) => void;
   onSave: () => void;
   onRemove: () => void;
+  onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
 }
 
 export default function AssetCard({
   asset,
   editable,
-  onChange,
   onUpload,
+  onChange,
   onSave,
   onRemove,
 }: AssetCardProps) {
-  const fieldStyle: React.CSSProperties = {
-    fontSize: "1rem",
-    padding: "4px 0",
-    minWidth: "8em",
-  };
-
+  const [modalOpen, setModalOpen] = useState(false);
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        padding: "1em",
-        marginBottom: "1em",
-        borderRadius: "8px",
-        backgroundColor: "#fafafa",
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75em",
-      }}
-    >
-      <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
-        Asset <span style={{ fontWeight: "normal" }}>{asset.id}</span>
-      </div>
-
-      {/* Section Field */}
-      {editable ? (
-        <input
-          style={fieldStyle}
-          type="text"
-          placeholder="Section"
-          value={asset.section || ""}
-          onChange={(e) => onChange({ section: e.target.value })}
-        />
-      ) : (
-        <div style={fieldStyle}>
-          <strong>Section:</strong> {asset.section}
-        </div>
-      )}
-
-      {/* Page Number Field */}
-      {editable ? (
-        <input
-          style={fieldStyle}
-          type="number"
-          placeholder="Page Number"
-          value={asset.pageNumber || ""}
-          onChange={(e) => onChange({ pageNumber: e.target.value })}
-        />
-      ) : (
-        <div style={fieldStyle}>
-          <strong>Page Number:</strong> {asset.pageNumber}
-        </div>
-      )}
-
-      {/* Images & Actions */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "1.5em",
-          marginTop: "1em",
-          flexWrap: "wrap",
-        }}
-      >
-        {/* Upload / Display Sheet */}
-        <div style={{ textAlign: "center" }}>
+    <div className="container">
+      <Typography>Asset: {asset.id}</Typography>
+      <AssetCardModal
+        asset={asset}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onChange={onChange}
+        onUpload={onUpload}
+        onSave={onSave}
+      />
+      <div className="card">
+        <div>
           {editable && (
             <Button
               type="button"

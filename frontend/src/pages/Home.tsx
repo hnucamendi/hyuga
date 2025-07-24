@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"
-import { CreateProject, LoadProjects, DeleteProject } from "../../wailsjs/go/main/App.js";
+import { useNavigate } from "react-router-dom";
+import {
+  CreateProject,
+  LoadProjects,
+  DeleteProject,
+} from "../../wailsjs/go/main/App.js";
 import Card from "../components/Card";
 import Button from "../components/Button";
-import Header from "../components/Header"
+import Header from "../components/Header";
 import type { main } from "../../wailsjs/go/models";
 import "../App.css";
 import "../styles/header.css";
 
 function Home() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<main.Project[]>([]);
 
   useEffect(() => {
     const init = async () => {
       try {
+        console.log(projects);
         const list = await LoadProjects();
         setProjects(list);
       } catch (err) {
@@ -22,7 +27,7 @@ function Home() {
       }
     };
     init();
-  }, [projects]);
+  }, []);
 
   const handleCreateNewProject = async () => {
     try {
@@ -36,15 +41,15 @@ function Home() {
 
   const handleOpenProject = async (id: string) => {
     try {
-      navigate(`/project/${id}`)
+      navigate(`/project/${id}`);
     } catch (err) {
       console.error("Failed to open project", err);
     }
-  }
+  };
 
   const handleDeleteProject = async (id: string) => {
     try {
-      DeleteProject(id)
+      await DeleteProject(id);
       const refreshed = await LoadProjects();
       setProjects(refreshed);
     } catch (err) {
@@ -52,13 +57,10 @@ function Home() {
     }
   };
 
-
   if (!projects || projects.length === 0) {
     return (
       <>
-        <Header
-          createProject={handleCreateNewProject}
-        />
+        <Header createProject={handleCreateNewProject} />
         <h1>No tienes algun proyecto toda via</h1>
       </>
     );
@@ -73,8 +75,16 @@ function Home() {
           title={p.name}
           content={
             <>
-              <Button label="Abrir Proyecto" onClick={() => handleOpenProject(p.id)} type="button" />
-              <Button label="Borrar Proyecto" onClick={() => handleDeleteProject(p.id)} type="button" />
+              <Button
+                label="Abrir Proyecto"
+                onClick={() => handleOpenProject(p.id)}
+                type="button"
+              />
+              <Button
+                label="Borrar Proyecto"
+                onClick={() => handleDeleteProject(p.id)}
+                type="button"
+              />
             </>
           }
           footer={p.created_at}
@@ -85,4 +95,3 @@ function Home() {
 }
 
 export default Home;
-

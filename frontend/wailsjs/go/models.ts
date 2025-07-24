@@ -1,11 +1,12 @@
 export namespace main {
 	
 	export class AssetMetadata {
-	    asset_id: string;
+	    id: string;
 	    sheet: string;
 	    cutout: string;
-	    page_number: string;
+	    pageNumber: string;
 	    section: string;
+	    saved: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AssetMetadata(source);
@@ -13,11 +14,12 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.asset_id = source["asset_id"];
+	        this.id = source["id"];
 	        this.sheet = source["sheet"];
 	        this.cutout = source["cutout"];
-	        this.page_number = source["page_number"];
+	        this.pageNumber = source["pageNumber"];
 	        this.section = source["section"];
+	        this.saved = source["saved"];
 	    }
 	}
 	export class Project {

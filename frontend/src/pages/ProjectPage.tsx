@@ -9,20 +9,12 @@ import {
 } from "../../wailsjs/go/main/App";
 import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
-
-export interface AssetGroup {
-  id: string;
-  sheet?: string;
-  cutout?: string;
-  pageNumber?: string;
-  section?: string;
-  saved?: boolean;
-}
+import Typography from "../components/Typography";
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
-  const [assets, setAssets] = useState<AssetGroup[]>([]);
+  const [assets, setAssets] = useState<main.AssetMetadata[]>([]);
   const [addingNew, setAddingNew] = useState(false);
 
   useEffect(() => {
@@ -32,10 +24,10 @@ function ProjectPage() {
       .then((metas) =>
         setAssets(
           metas.map((m) => ({
-            id: m.asset_id,
-            sheet: m.sheet, // ensure PhotoType fields too
+            id: m.id,
+            sheet: m.sheet,
             cutout: m.cutout,
-            pageNumber: m.page_number,
+            pageNumber: m.pageNumber,
             section: m.section,
             saved: true,
           })),
@@ -44,14 +36,21 @@ function ProjectPage() {
       .catch(console.error);
   }, [projectId]);
 
-  const updateAsset = (id: string, updates: Partial<AssetGroup>) =>
+  const updateAsset = (id: string, updates: Partial<main.AssetMetadata>) =>
     setAssets((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...updates } : a)),
     );
 
   const addEmptyAsset = () => {
     const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
-    const newAsset: AssetGroup = { id, saved: false };
+    const newAsset: main.AssetMetadata = {
+      id,
+      sheet: "",
+      cutout: "",
+      pageNumber: "",
+      section: "",
+      saved: false,
+    };
     setAssets((prev) => [...prev, newAsset]);
     setAddingNew(true);
   };
@@ -60,13 +59,32 @@ function ProjectPage() {
     setAssets((prev) => prev.filter((a) => a.id !== id));
 
   const handleUpload = (type: "sheet" | "cutout", id: string) => {
-    /* same as before */
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file || !projectId) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result?.toString().split(",")[1];
+        if (!base64) return;
+        try {
+          await UploadPhoto(base64, type, projectId, id);
+          updateAsset(id, { [type]: base64 });
+        } catch (err) {
+          console.error("UploadPhoto error:", err);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   };
 
-  const isAssetReady = (a: AssetGroup) =>
+  const isAssetReady = (a: main.AssetMetadata) =>
     !!a.sheet && !!a.cutout && !!a.pageNumber && !!a.section;
 
-  const saveAsset = async (a: AssetGroup) => {
+  const saveAsset = async (a: main.AssetMetadata) => {
     if (!projectId || !isAssetReady(a)) return;
     await SaveAsset(projectId, a.id, a.pageNumber!, a.section!);
     updateAsset(a.id, { saved: true });
@@ -76,7 +94,7 @@ function ProjectPage() {
   if (!projectId) return <div>No project selected.</div>;
 
   return (
-    <>
+    <div>
       <h2>{project?.name || "Loading project..."}</h2>
       <section>
         {assets.map((asset) => (
@@ -84,8 +102,8 @@ function ProjectPage() {
             key={asset.id}
             asset={asset}
             editable={!asset.saved}
-            onChange={(updates) => updateAsset(asset.id, updates)}
-            onUpload={(type) => handleUpload(type, asset.id)}
+            onChange={updateAsset}
+            onUpload={handleUpload}
             onSave={() => saveAsset(asset)}
             onRemove={() => removeAsset(asset.id)}
           />
@@ -95,7 +113,7 @@ function ProjectPage() {
           <Button label="Add New Asset" onClick={addEmptyAsset} type="button" />
         )}
       </section>
-    </>
+    </div>
   );
 }
 
