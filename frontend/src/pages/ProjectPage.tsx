@@ -9,13 +9,14 @@ import {
 } from "../../wailsjs/go/main/App";
 import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
-import Typography from "../components/Typography";
+import AssetCardModal from "../components/AssetCardModal";
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
   const [assets, setAssets] = useState<main.AssetMetadata[]>([]);
   const [addingNew, setAddingNew] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -109,8 +110,20 @@ function ProjectPage() {
           />
         ))}
 
-        {!addingNew && (
-          <Button label="Add New Asset" onClick={addEmptyAsset} type="button" />
+        <AssetCardModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(!isOpen)}
+          onChange={updateAsset}
+          onSave={saveAsset}
+          onUpload={handleUpload}
+        />
+
+        {!isOpen && (
+          <Button
+            label="Add New Asset"
+            onClick={() => setIsOpen(!isOpen)}
+            type="button"
+          />
         )}
       </section>
     </div>

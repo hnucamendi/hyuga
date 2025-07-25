@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import Button from "./Button";
-import AssetCardInput from "./AssetCardInput";
+import React, { useEffect, useState } from "react";
 import { main } from "../../wailsjs/go/models";
+import "../styles/assetcardmodal.css";
+import AssetCardInput from "./AssetCardInput";
+import Button from "./Button";
 
 export interface NewAssetData {
   section: string;
@@ -10,15 +11,13 @@ export interface NewAssetData {
   cutout?: string;
 }
 interface AssetCardModalProps {
-  asset: main.AssetMetadata;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: NewAssetData) => void;
-  onUpload: (type: "sheet" | "cutout", id: string) => void;
   onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
+  onSave: (data: main.AssetMetadata) => void;
+  onUpload: (type: "sheet" | "cutout", id: string) => void;
 }
 const AssetCardModal: React.FC<AssetCardModalProps> = ({
-  asset,
   isOpen,
   onClose,
   onChange,
@@ -27,76 +26,61 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
 }) => {
   const [section, setSection] = useState("");
   const [pageNumber, setPageNumber] = useState("");
-  const [sheet, setSheet] = useState<string>();
-  const [cutout, setCutout] = useState<string>();
+  const [sheet, setSheet] = useState<string>("");
+  const [cutout, setCutout] = useState<string>("");
+  const [id, setId] = useState<string>("");
+
+  useEffect(() => {
+    const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
+    setId(id);
+  }, []);
+
   if (!isOpen) return null;
 
-  const canSave = section && pageNumber & sheet && cutout;
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#fff",
-          padding: "2em",
-          borderRadius: "8px",
-          minWidth: "320px",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <h2>New Asset</h2>
         <AssetCardInput
-          id={asset.id}
-          section={asset.section}
+          id={id}
+          section={section}
           type="text"
-          placeHolder="Section"
+          placeHolder="section"
           onChange={onChange}
         />
         <AssetCardInput
-          section={asset.section}
+          id={id}
+          section={section}
           type="number"
-          placeHolder="Page Number"
+          placeHolder="page number"
           onChange={onChange}
         />
 
-        <div style={{ display: "flex", gap: "1em", marginBottom: "1em" }}>
-          <Button
-            label={sheet ? "Replace Sheet" : "Upload Sheet"}
-            onClick={() => onUpload("sheet", asset.id)}
-            type="button"
-          />
-          <Button
-            label={cutout ? "Replace Cutout" : "Upload Cutout"}
-            onClick={() => onUpload("cutout", asset.id)}
-            type="button"
-          />
-        </div>
+        <Button
+          type="button"
+          label={sheet ? "Change Sheet" : "Upload Sheet"}
+          onClick={() => onUpload("sheet", id)}
+        />
+        <img
+          src={`data:image/jpeg;base64,${sheet}`}
+          alt="Sheet"
+          width={120}
+          style={{ display: "block", borderRadius: "4px" }}
+        />
 
-        <div
-          style={{ display: "flex", justifyContent: "flex-end", gap: "0.5em" }}
-        >
-          <Button label="Cancel" onClick={onClose} type="button" />
-          <Button
-            label="Save"
-            type="button"
-            disabled={!canSave}
-            onClick={() => onSave({ section, pageNumber, sheet, cutout })}
-          />
-        </div>
+        <Button
+          type="button"
+          label={cutout ? "Change Cutout" : "Upload Cutout"}
+          onClick={() => onUpload("cutout", id)}
+        />
+        <img
+          src={`data:image/jpeg;base64,${cutout}`}
+          alt="Cutout"
+          width={120}
+          style={{ display: "block", borderRadius: "4px" }}
+        />
+
+        <Button type="button" label="Save" onClick={onSave} />
       </div>
     </div>
   );

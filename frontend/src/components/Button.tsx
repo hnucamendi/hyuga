@@ -1,9 +1,9 @@
 import React from "react";
-import "../styles/button.css"
+import "../styles/button.css";
 
 type ButtonProps = {
   label: string;
-  onClick?: () => void;
+  onClick?: (a?: any) => void;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   className?: string; // allows extra styling from outside
@@ -29,4 +29,3 @@ const Button: React.FC<ButtonProps> = ({
 };
 
 export default Button;
-

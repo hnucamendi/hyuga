@@ -4,7 +4,6 @@ import { main } from "../../wailsjs/go/models";
 
 interface AssetCardInputProps {
   id: string;
-  editable: boolean;
   section: string;
   type: string;
   placeHolder: string;
@@ -13,7 +12,6 @@ interface AssetCardInputProps {
 
 const AssetCardInput: React.FC<AssetCardInputProps> = ({
   id,
-  editable,
   section,
   type,
   placeHolder,
@@ -21,19 +19,13 @@ const AssetCardInput: React.FC<AssetCardInputProps> = ({
 }) => {
   return (
     <>
-      {editable ? (
-        <input
-          className="fieldStyle"
-          type={type}
-          placeholder={placeHolder}
-          value={section}
-          onChange={(e) => onChange(id, { section: e.target.value })}
-        />
-      ) : (
-        <div>
-          <Typography> Section: {section}</Typography>
-        </div>
-      )}
+      <input
+        className="fieldStyle"
+        type={type}
+        placeholder={placeHolder}
+        value={section}
+        onChange={(e) => onChange(id, { section: e.target.value })}
+      />
     </>
   );
 };

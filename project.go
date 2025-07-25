@@ -84,7 +84,7 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 	}
 
 	meta := AssetMetadata{
-		AssetID:    assetId,
+		ID:         assetId,
 		PageNumber: pageNumber,
 		Section:    section,
 	}
