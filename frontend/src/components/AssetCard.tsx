@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Button from "./Button";
 import { main } from "../../wailsjs/go/models";
 import "../styles/assetcard.css";
@@ -7,30 +6,25 @@ import Typography from "./Typography";
 interface AssetCardProps {
   asset: main.AssetMetadata;
   editable: boolean;
-  onSave: () => void;
   onRemove: () => void;
-  onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
 }
 
 export default function AssetCard({
   asset,
   editable,
-  onChange,
-  onSave,
   onRemove,
 }: AssetCardProps) {
   return (
-    <div className="container">
-      <Typography>Asset: {asset.id}</Typography>
-      <div className="card">
-        <div>
-          <Button
-            type="button"
-            label={editable ? "Remove" : "Delete"}
-            onClick={onRemove}
-          />
-        </div>
-      </div>
+    <div className="card">
+      <Typography>Section: {asset.section}</Typography>
+      <Typography>Page Number: {asset.pageNumber}</Typography>
+      <img src={`data:image/jpeg;base64,${asset.sheet}`} />
+      <img src={`data:image/jpeg;base64,${asset.cutout}`} />
+      <Button
+        type="button"
+        label={editable ? "Remove" : "Delete"}
+        onClick={onRemove}
+      />
     </div>
   );
 }

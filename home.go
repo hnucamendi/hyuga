@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +17,20 @@ type Project struct {
 	Name      string          `json:"name"`
 	CreatedAt string          `json:"created_at"`
 	Assets    []AssetMetadata `json:"assets"`
+}
+
+func cleanupDirs(d []os.DirEntry) []os.DirEntry {
+	var cd []os.DirEntry
+	for _, v := range d {
+		if !v.IsDir() {
+			continue
+		}
+		if !strings.Contains(v.Name(), "project-") {
+			continue
+		}
+		cd = append(cd, v)
+	}
+	return cd
 }
 
 func (a *App) LoadProjects() ([]Project, error) {
@@ -30,16 +45,19 @@ func (a *App) LoadProjects() ([]Project, error) {
 		return nil, err
 	}
 
-	dir, err := os.ReadDir(projectsPath)
+	dirs, err := os.ReadDir(projectsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var res = make([]Project, len(dir))
-	for i, v := range dir {
+	cleanedDirs := cleanupDirs(dirs)
+
+	var res = make([]Project, len(cleanedDirs))
+	for i, v := range cleanedDirs {
 		if !v.IsDir() {
 			continue
 		}
+
 		cfgPath := filepath.Join(projectsPath, v.Name(), "project.json")
 		data, err := os.ReadFile(cfgPath)
 		if err != nil {
@@ -63,7 +81,7 @@ func (a *App) LoadProject(id string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	path := filepath.Join(base, "projects", id, "project.json")
+	path := filepath.Join(base, "projects", concat("project-", id), "project.json")
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -103,7 +121,7 @@ func (a *App) CreateProject() error {
 		return err
 	}
 
-	projectsDir := filepath.Join(base, "projects", id)
+	projectsDir := filepath.Join(base, "projects", concat("project-", id))
 	if err := os.MkdirAll(projectsDir, 0755); err != nil {
 		return err
 	}
@@ -139,7 +157,7 @@ func (a *App) DeleteProject(id string) error {
 		return err
 	}
 
-	path := filepath.Join(base, "projects", id)
+	path := filepath.Join(base, "projects", concat("project-", id))
 	err = os.RemoveAll(path)
 	if err != nil {
 		return err

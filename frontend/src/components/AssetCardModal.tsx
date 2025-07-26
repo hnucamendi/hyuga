@@ -14,7 +14,7 @@ interface AssetCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
-  onSave: (data: Partial<main.AssetMetadata>) => void;
+  onSave: (data: Partial<main.AssetMetadata>) => Promise<void>;
   onUpload: (type: "sheet" | "cutout", id: string) => Promise<string>;
 }
 const AssetCardModal: React.FC<AssetCardModalProps> = ({
@@ -37,6 +37,14 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
   }, []);
 
   if (!isOpen) return null;
+
+  const resetModal = () => {
+    setId("")
+    setSection("")
+    setPageNumber("")
+    setSheet("")
+    setCutout("")
+  }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -88,14 +96,15 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
         <Button
           type="button"
           label="Save"
-          onClick={() =>
-            onSave({
+          onClick={async () => {
+            await onSave({
               pageNumber: pageNumber,
               section: section,
               sheet: sheet,
               cutout: cutout,
             })
-          }
+            resetModal()
+          }}
           disabled={!canSave}
         />
       </div>

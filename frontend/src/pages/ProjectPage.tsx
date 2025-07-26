@@ -1,36 +1,34 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { main } from "../../wailsjs/go/models";
-import { LoadProject, SaveAsset, LoadAssets } from "../../wailsjs/go/main/App";
+import { LoadProject, SaveAsset, LoadAssets, DeleteAsset, GeneratePDF } from "../../wailsjs/go/main/App";
 import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
 import AssetCardModal from "../components/AssetCardModal";
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate()
   const [project, setProject] = useState<main.Project>();
   const [assets, setAssets] = useState<main.AssetMetadata[]>([]);
   const [addingNew, setAddingNew] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    const loadProject = async (pid: string) => {
+      const project = await LoadProject(pid)
+      setProject(project)
+    }
+
+    const loadAssets = async (pid: string) => {
+      const assets = await LoadAssets(pid)
+      setAssets(assets)
+    }
+
     if (!projectId) return;
-    LoadProject(projectId).then(setProject).catch(console.error);
-    LoadAssets(projectId)
-      .then((metas) =>
-        setAssets(
-          metas.map((m) => ({
-            id: m.id,
-            sheet: m.sheet,
-            cutout: m.cutout,
-            pageNumber: m.pageNumber,
-            section: m.section,
-            saved: true,
-          })),
-        ),
-      )
-      .catch(console.error);
-  }, [projectId]);
+    loadProject(projectId)
+    loadAssets(projectId)
+  }, [projectId, assets]);
 
   const updateAsset = (id: string, updates: Partial<main.AssetMetadata>) =>
     setAssets((prev) =>
@@ -51,8 +49,9 @@ function ProjectPage() {
     setAddingNew(true);
   };
 
-  const removeAsset = (id: string) =>
-    setAssets((prev) => prev.filter((a) => a.id !== id));
+  const removeAsset = (projectId: string, assetId: string) => {
+    DeleteAsset(projectId, assetId)
+  }
 
   const handleUpload = (
     type: "sheet" | "cutout",
@@ -125,13 +124,23 @@ function ProjectPage() {
       a.cutout!,
     );
     updateAsset(id, { saved: true });
-    setAddingNew(false);
+    setIsOpen(!isOpen)
   };
+
+  const navigateBack = () => {
+    navigate("/")
+  }
+
+  const handleGeneratePDF = async () => {
+    if (!projectId) throw new Error("missing projectId")
+    await GeneratePDF(projectId)
+  }
 
   if (!projectId) return <div>No project selected.</div>;
 
   return (
     <div>
+      <Button label="<- Back" onClick={navigateBack} />
       <h2>{project?.name || "Loading project..."}</h2>
       <section>
         {assets.map((asset) => (
@@ -139,9 +148,7 @@ function ProjectPage() {
             key={asset.id}
             asset={asset}
             editable={!asset.saved}
-            onChange={updateAsset}
-            onSave={() => saveAsset(asset)}
-            onRemove={() => removeAsset(asset.id)}
+            onRemove={() => removeAsset(projectId, asset.id)}
           />
         ))}
 
@@ -160,6 +167,8 @@ function ProjectPage() {
             type="button"
           />
         )}
+
+        <Button label="Generate PDF" onClick={handleGeneratePDF} />
       </section>
     </div>
   );

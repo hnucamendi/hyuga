@@ -4,7 +4,11 @@ import {main} from '../models';
 
 export function CreateProject():Promise<void>;
 
+export function DeleteAsset(arg1:string,arg2:string):Promise<void>;
+
 export function DeleteProject(arg1:string):Promise<void>;
+
+export function GeneratePDF(arg1:string):Promise<void>;
 
 export function LoadAssets(arg1:string):Promise<Array<main.AssetMetadata>>;
 

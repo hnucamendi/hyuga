@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/signintech/gopdf"
 )
 
 type PhotoType string
@@ -36,8 +39,7 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 		return err
 	}
 
-	// Load existing project.json
-	projectPath := filepath.Join(base, "projects", projectId, "project.json")
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
 	b, err := os.ReadFile(projectPath)
 	if err != nil {
 		return fmt.Errorf("failed to read project.json: %w", err)
@@ -58,7 +60,7 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 
 	ok := ensureUnique(proj, asset)
 	if !ok {
-    fmt.Println("project: ")
+		fmt.Println(concat("project: ", proj.Id, " already exists"))
 		return nil
 	}
 
@@ -74,8 +76,6 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 		return err
 	}
 
-	fmt.Printf("TAMO %+v\n", proj)
-
 	return nil
 }
 
@@ -89,52 +89,155 @@ func (a *App) LoadAssets(projectId string) ([]AssetMetadata, error) {
 		return nil, err
 	}
 
-	projectDir := filepath.Join(base, "projects", projectId)
-	entries, err := os.ReadDir(projectDir)
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read project folder: %w", err)
 	}
 
-	var metas []AssetMetadata
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		assetDir := filepath.Join(projectDir, e.Name())
-		imgDir := filepath.Join(assetDir, "images")
-		metaFile := filepath.Join(assetDir, "metadata.json")
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return nil, fmt.Errorf("invalid project JSON %w", err)
+	}
 
-		// Load metadata
-		b, err := os.ReadFile(metaFile)
-		if err != nil {
-			continue
-		}
-		var m AssetMetadata
-		if err := json.Unmarshal(b, &m); err != nil {
-			continue
-		}
+	return proj.Assets, nil
+}
 
-		// Load images as base64 if present
-		files, err := os.ReadDir(imgDir)
-		if err == nil {
-			for _, f := range files {
-				name := strings.ToLower(f.Name())
-				fullPath := filepath.Join(imgDir, f.Name())
-				imgBytes, e := os.ReadFile(fullPath)
-				if e != nil {
-					continue
-				}
-				encoded := base64.StdEncoding.EncodeToString(imgBytes)
-				if strings.HasPrefix(name, "sheet-") && m.Sheet == "" {
-					m.Sheet = encoded
-				} else if strings.HasPrefix(name, "cutout-") && m.Cutout == "" {
-					m.Cutout = encoded
-				}
+func (a *App) DeleteAsset(projectId string, assetId string) error {
+	if projectId == "" || assetId == "" {
+		return fmt.Errorf("required project or asset ID not found")
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return err
+	}
+
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	index := -1
+	for i, asset := range proj.Assets {
+		if asset.ID == assetId {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return fmt.Errorf("asset with ID %s not found in project", assetId)
+	}
+
+	proj.Assets[index] = proj.Assets[len(proj.Assets)-1]
+	proj.Assets = proj.Assets[:len(proj.Assets)-1]
+
+	updated, err := json.MarshalIndent(proj, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to serialize updated project: %w", err)
+	}
+
+	if err := os.WriteFile(projectPath, updated, 0644); err != nil {
+		return fmt.Errorf("failed to write updated project file: %w", err)
+	}
+	return nil
+}
+
+func (a *App) GeneratePDF(projectId string) error {
+	if projectId == "" {
+		return fmt.Errorf("required project or asset ID not found")
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return err
+	}
+
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	fmt.Println("TAMO")
+
+	pdf := &gopdf.GoPdf{}
+	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
+	pdf.AddPage()
+
+	fontPath := filepath.Join(base, "fonts", "arial.ttf")
+	if err := pdf.AddTTFFont("Arial", fontPath); err != nil {
+		return fmt.Errorf("failed to load font: %w", err)
+	}
+	if err := pdf.SetFont("Arial", "", 14); err != nil {
+		return fmt.Errorf("failed to set font: %w", err)
+	}
+
+	for _, asset := range proj.Assets {
+		pdf.AddPage()
+
+		// Write metadata
+		pdf.SetY(40)
+		pdf.Cell(nil, fmt.Sprintf("Section: %s", asset.Section))
+		pdf.Br(20)
+		pdf.Cell(nil, fmt.Sprintf("Page Number: %s", asset.PageNumber))
+		pdf.Br(20)
+
+		// Decode and draw base64 images
+		if asset.Sheet != "" {
+			if err := drawBase64Image(pdf, asset.Sheet, 50, 100); err != nil {
+				fmt.Printf("warning: failed to decode sheet: %v\n", err)
 			}
 		}
 
-		metas = append(metas, m)
+		if asset.Cutout != "" {
+			if err := drawBase64Image(pdf, asset.Cutout, 300, 100); err != nil {
+				fmt.Printf("warning: failed to decode cutout: %v\n", err)
+			}
+		}
 	}
 
-	return metas, nil
+	outputPath := filepath.Join(projectPath, "output.pdf")
+	if err := pdf.WritePdf(outputPath); err != nil {
+		return fmt.Errorf("failed to write PDF: %w", err)
+	}
+
+	return nil
+}
+
+// drawBase64Image decodes a base64 string and draws it at the specified x,y
+func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
+	// Strip data URI prefix if present
+	if idx := strings.Index(base64Str, "base64,"); idx != -1 {
+		base64Str = base64Str[idx+7:]
+	}
+
+	imgBytes, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return fmt.Errorf("base64 decode error: %w", err)
+	}
+
+	imgReader := bytes.NewReader(imgBytes)
+	img, _, err := image.Decode(imgReader)
+	if err != nil {
+		return fmt.Errorf("image decode error: %w", err)
+	}
+
+	if err := pdf.ImageFrom(img, x, y, nil); err != nil {
+		return fmt.Errorf("error embedding image in PDF: %w", err)
+	}
+
+	return nil
 }

@@ -6,8 +6,16 @@ export function CreateProject() {
   return window['go']['main']['App']['CreateProject']();
 }
 
+export function DeleteAsset(arg1, arg2) {
+  return window['go']['main']['App']['DeleteAsset'](arg1, arg2);
+}
+
 export function DeleteProject(arg1) {
   return window['go']['main']['App']['DeleteProject'](arg1);
+}
+
+export function GeneratePDF(arg1) {
+  return window['go']['main']['App']['GeneratePDF'](arg1);
 }
 
 export function LoadAssets(arg1) {

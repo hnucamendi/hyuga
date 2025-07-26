@@ -1,28 +1,24 @@
-.container {
-  border: "1px solid #ddd";
-  padding: "1em";
-  margin-bottom: "1em";
-  border-radius: "8px";
-  background-color: "#fafafa";
-  display: "flex";
-  flex-direction: "column";
-  gap: "0.75em";
-  font-weight: "bold";
-  font-size: "1.1em";
-}
-
-.fieldStyle {
-  font-size: "1rem";
-  padding: "4px 0";
-  min-width: "8em";
-}
-
 .card {
-  display: "flex";
-  justify-content: "center";
-  align-items: "center";
-  gap: "1.5em";
-  margin-top: "1em";
-  flex-wrap: "wrap";
-  text-align: "center";
+  margin: 0 auto;
+  width: 40em;
+  border: solid .05em #999;
+  border-radius: 1em;
+  box-shadow: inset -12px -8px 40px #fff;
+  margin-bottom: 1em;
+  padding: 1.2em;
+}
+
+.card img {
+  width: 180px;
+  max-width: 100%;
+  border-radius: .1em;
+}
+
+.card button {
+  margin: 0 auto;
+  display: block;
+}
+
+.card span {
+  text-align: center;
 }
