@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type PhotoType string
@@ -26,37 +26,7 @@ type AssetMetadata struct {
 	Saved      bool   `json:"saved"`
 }
 
-func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId string, attributeId string) error {
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		return fmt.Errorf("failed to decode base64: %w", err)
-	}
-
-	base, err := getBaseConfigPath()
-	if err != nil {
-		return err
-	}
-
-	dirPath := filepath.Join(base, "projects", projectId, attributeId, "images")
-	err = os.MkdirAll(dirPath, 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create project path: %w", err)
-	}
-
-	timestamp := time.Now().Format("20060102-150405")
-	filename := fmt.Sprintf("%s-%s.jpg", strings.ToLower(string(imageType)), timestamp)
-	filePath := filepath.Join(dirPath, filename)
-
-	// 4. Write file
-	err = os.WriteFile(filePath, data, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write image: %w", err)
-	}
-
-	return nil
-}
-
-func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, section string) error {
+func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, section string, sheet string, cutout string) error {
 	if projectId == "" || assetId == "" {
 		return fmt.Errorf("projectId and assetId are required")
 	}
@@ -78,26 +48,33 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 		return fmt.Errorf("invalid project JSON: %w", err)
 	}
 
-	metaPath := filepath.Join(base, "projects", projectId, assetId, "metadata.json")
-	if err := os.MkdirAll(filepath.Dir(metaPath), 0755); err != nil {
-		return fmt.Errorf("failed to create metadata dir: %w", err)
-	}
-
-	meta := AssetMetadata{
+	asset := AssetMetadata{
 		ID:         assetId,
 		PageNumber: pageNumber,
 		Section:    section,
+		Sheet:      sheet,
+		Cutout:     cutout,
 	}
-	data, err := json.MarshalIndent(meta, "", "  ")
+
+	ok := ensureUnique(proj, asset)
+	if !ok {
+    fmt.Println("project: ")
+		return nil
+	}
+
+	proj.Assets = append(proj.Assets, asset)
+
+	data, err := json.MarshalIndent(proj, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return err
 	}
 
-	fmt.Println(meta)
-
-	if err := os.WriteFile(metaPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write metadata file: %w", err)
+	err = os.WriteFile(projectPath, data, 0644)
+	if err != nil {
+		return err
 	}
+
+	fmt.Printf("TAMO %+v\n", proj)
 
 	return nil
 }

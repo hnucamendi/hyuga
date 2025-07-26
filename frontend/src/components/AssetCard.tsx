@@ -7,7 +7,6 @@ import Typography from "./Typography";
 interface AssetCardProps {
   asset: main.AssetMetadata;
   editable: boolean;
-  onUpload: (type: "sheet" | "cutout", id: string) => void;
   onSave: () => void;
   onRemove: () => void;
   onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
@@ -16,7 +15,6 @@ interface AssetCardProps {
 export default function AssetCard({
   asset,
   editable,
-  onUpload,
   onChange,
   onSave,
   onRemove,

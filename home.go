@@ -12,11 +12,10 @@ import (
 )
 
 type Project struct {
-	Id        string            `json:"id"`
-	Name      string            `json:"name"`
-	CreatedAt string            `json:"created_at"`
-	Assets    []string          `json:"assets"`
-	Metadata  map[string]string `json:"metadata"`
+	Id        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt string          `json:"created_at"`
+	Assets    []AssetMetadata `json:"assets"`
 }
 
 func (a *App) LoadProjects() ([]Project, error) {
@@ -87,6 +86,15 @@ func getBaseConfigPath() (string, error) {
 	return appDir, os.MkdirAll(appDir, 0755)
 }
 
+func ensureUnique(p Project, a AssetMetadata) bool {
+	for _, v := range p.Assets {
+		if v.ID == a.ID {
+			return false
+		}
+	}
+	return true
+}
+
 func (a *App) CreateProject() error {
 	name := rpg.Generate()
 	id := uuid.NewString()
@@ -109,8 +117,7 @@ func (a *App) CreateProject() error {
 		Id:        id,
 		Name:      name,
 		CreatedAt: time.Now().Local().In(loc).Format(time.DateTime),
-		Assets:    []string{},
-		Metadata:  map[string]string{},
+		Assets:    []AssetMetadata{},
 	}
 
 	data, err := json.MarshalIndent(proj, "", "  ")

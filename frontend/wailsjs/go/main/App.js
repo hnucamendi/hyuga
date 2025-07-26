@@ -22,10 +22,6 @@ export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }
 
-export function SaveAsset(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['SaveAsset'](arg1, arg2, arg3, arg4);
-}
-
-export function UploadPhoto(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['UploadPhoto'](arg1, arg2, arg3, arg4);
+export function SaveAsset(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SaveAsset'](arg1, arg2, arg3, arg4, arg5, arg6);
 }

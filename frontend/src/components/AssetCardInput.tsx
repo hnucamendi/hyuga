@@ -1,10 +1,9 @@
 import React from "react";
-import Typography from "./Typography";
 import { main } from "../../wailsjs/go/models";
 
 interface AssetCardInputProps {
   id: string;
-  section: string;
+  value: string;
   type: string;
   placeHolder: string;
   onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
@@ -12,7 +11,7 @@ interface AssetCardInputProps {
 
 const AssetCardInput: React.FC<AssetCardInputProps> = ({
   id,
-  section,
+  value,
   type,
   placeHolder,
   onChange,
@@ -23,7 +22,7 @@ const AssetCardInput: React.FC<AssetCardInputProps> = ({
         className="fieldStyle"
         type={type}
         placeholder={placeHolder}
-        value={section}
+        value={value}
         onChange={(e) => onChange(id, { section: e.target.value })}
       />
     </>

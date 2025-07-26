@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { main } from "../../wailsjs/go/models";
-import {
-  LoadProject,
-  UploadPhoto,
-  SaveAsset,
-  LoadAssets,
-} from "../../wailsjs/go/main/App";
+import { LoadProject, SaveAsset, LoadAssets } from "../../wailsjs/go/main/App";
 import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
 import AssetCardModal from "../components/AssetCardModal";
@@ -59,36 +54,77 @@ function ProjectPage() {
   const removeAsset = (id: string) =>
     setAssets((prev) => prev.filter((a) => a.id !== id));
 
-  const handleUpload = (type: "sheet" | "cutout", id: string) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file || !projectId) return;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result?.toString().split(",")[1];
-        if (!base64) return;
-        try {
-          await UploadPhoto(base64, type, projectId, id);
-          updateAsset(id, { [type]: base64 });
-        } catch (err) {
-          console.error("UploadPhoto error:", err);
-        }
+  const handleUpload = (
+    type: "sheet" | "cutout",
+    id: string,
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file || !projectId) return reject("No file or projectId");
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (!base64) return reject("Could not extract base64");
+
+          try {
+            updateAsset(id, { [type]: base64 });
+            resolve(base64);
+          } catch (err) {
+            console.error("UploadPhoto error:", err);
+            reject(err);
+          }
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
-    };
-    input.click();
+
+      input.click();
+    });
   };
 
-  const isAssetReady = (a: main.AssetMetadata) =>
+  const isAssetReady = (a: Partial<main.AssetMetadata>) =>
     !!a.sheet && !!a.cutout && !!a.pageNumber && !!a.section;
 
-  const saveAsset = async (a: main.AssetMetadata) => {
+  const generateId = async (
+    a: Partial<main.AssetMetadata>,
+  ): Promise<string> => {
+    if (!a.cutout || !a.sheet || !a.pageNumber || !a.section)
+      throw new Error("missing one of the required fields");
+
+    try {
+      const encoder = new TextEncoder();
+      const input = `${a.cutout}|${a.sheet}|${a.pageNumber}|${a.section}`;
+      const data = encoder.encode(input);
+
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      return hashHex;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const saveAsset = async (a: Partial<main.AssetMetadata>) => {
     if (!projectId || !isAssetReady(a)) return;
-    await SaveAsset(projectId, a.id, a.pageNumber!, a.section!);
-    updateAsset(a.id, { saved: true });
+    const id = await generateId(a);
+    await SaveAsset(
+      projectId,
+      id,
+      a.pageNumber!,
+      a.section!,
+      a.sheet!,
+      a.cutout!,
+    );
+    updateAsset(id, { saved: true });
     setAddingNew(false);
   };
 
@@ -104,7 +140,6 @@ function ProjectPage() {
             asset={asset}
             editable={!asset.saved}
             onChange={updateAsset}
-            onUpload={handleUpload}
             onSave={() => saveAsset(asset)}
             onRemove={() => removeAsset(asset.id)}
           />

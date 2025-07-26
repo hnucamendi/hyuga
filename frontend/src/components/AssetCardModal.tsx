@@ -14,8 +14,8 @@ interface AssetCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onChange: (id: string, updates: Partial<main.AssetMetadata>) => void;
-  onSave: (data: main.AssetMetadata) => void;
-  onUpload: (type: "sheet" | "cutout", id: string) => void;
+  onSave: (data: Partial<main.AssetMetadata>) => void;
+  onUpload: (type: "sheet" | "cutout", id: string) => Promise<string>;
 }
 const AssetCardModal: React.FC<AssetCardModalProps> = ({
   isOpen,
@@ -24,11 +24,12 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
   onSave,
   onUpload,
 }) => {
+  const [id, setId] = useState<string>("");
   const [section, setSection] = useState("");
-  const [pageNumber, setPageNumber] = useState("");
+  const [pageNumber, setPageNumber] = useState<string>("");
   const [sheet, setSheet] = useState<string>("");
   const [cutout, setCutout] = useState<string>("");
-  const [id, setId] = useState<string>("");
+  const canSave = pageNumber && sheet && cutout && sheet;
 
   useEffect(() => {
     const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
@@ -43,44 +44,60 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
         <h2>New Asset</h2>
         <AssetCardInput
           id={id}
-          section={section}
           type="text"
+          value={section}
           placeHolder="section"
-          onChange={onChange}
+          onChange={(id, newVal) => {
+            setSection(newVal.section || "");
+            onChange(id, newVal);
+          }}
         />
         <AssetCardInput
           id={id}
-          section={section}
           type="number"
+          value={pageNumber}
           placeHolder="page number"
-          onChange={onChange}
+          onChange={(id, newVal) => {
+            setPageNumber(newVal.section || "");
+            onChange(id, newVal);
+          }}
         />
+
+        <div className="modal-images">
+          <img src={`data:image/jpeg;base64,${sheet}`} alt="Sheet" />
+          <img src={`data:image/jpeg;base64,${cutout}`} alt="Cutout" />
+        </div>
 
         <Button
           type="button"
           label={sheet ? "Change Sheet" : "Upload Sheet"}
-          onClick={() => onUpload("sheet", id)}
+          onClick={async () => {
+            const b64 = await onUpload("sheet", id);
+            setSheet(b64);
+          }}
         />
-        <img
-          src={`data:image/jpeg;base64,${sheet}`}
-          alt="Sheet"
-          width={120}
-          style={{ display: "block", borderRadius: "4px" }}
+        <Button
+          type="button"
+          label={cutout ? "Change Cutout" : "Upload Cutout"}
+          onClick={async () => {
+            const b64 = await onUpload("cutout", id);
+            setCutout(b64);
+          }}
         />
 
         <Button
           type="button"
-          label={cutout ? "Change Cutout" : "Upload Cutout"}
-          onClick={() => onUpload("cutout", id)}
+          label="Save"
+          onClick={() =>
+            onSave({
+              pageNumber: pageNumber,
+              section: section,
+              sheet: sheet,
+              cutout: cutout,
+            })
+          }
+          disabled={!canSave}
         />
-        <img
-          src={`data:image/jpeg;base64,${cutout}`}
-          alt="Cutout"
-          width={120}
-          style={{ display: "block", borderRadius: "4px" }}
-        />
-
-        <Button type="button" label="Save" onClick={onSave} />
       </div>
     </div>
   );
