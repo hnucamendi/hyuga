@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
+	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -174,10 +176,10 @@ func (a *App) GeneratePDF(projectId string) error {
 	fmt.Println("TAMO")
 
 	pdf := &gopdf.GoPdf{}
-	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
-	pdf.AddPage()
+	pageSize := *gopdf.PageSizeA4
+	pdf.Start(gopdf.Config{PageSize: pageSize})
 
-	fontPath := filepath.Join(base, "fonts", "arial.ttf")
+	fontPath := filepath.Join("fonts", "Arial.ttf")
 	if err := pdf.AddTTFFont("Arial", fontPath); err != nil {
 		return fmt.Errorf("failed to load font: %w", err)
 	}
@@ -195,21 +197,14 @@ func (a *App) GeneratePDF(projectId string) error {
 		pdf.Cell(nil, fmt.Sprintf("Page Number: %s", asset.PageNumber))
 		pdf.Br(20)
 
-		// Decode and draw base64 images
-		if asset.Sheet != "" {
-			if err := drawBase64Image(pdf, asset.Sheet, 50, 100); err != nil {
-				fmt.Printf("warning: failed to decode sheet: %v\n", err)
-			}
-		}
-
 		if asset.Cutout != "" {
-			if err := drawBase64Image(pdf, asset.Cutout, 300, 100); err != nil {
+			if err := drawBase64Image(pdf, asset.Cutout, pageSize.W/2, pageSize.H/2); err != nil {
 				fmt.Printf("warning: failed to decode cutout: %v\n", err)
 			}
 		}
 	}
 
-	outputPath := filepath.Join(projectPath, "output.pdf")
+	outputPath := filepath.Join(projectPath, "../", "output.pdf")
 	if err := pdf.WritePdf(outputPath); err != nil {
 		return fmt.Errorf("failed to write PDF: %w", err)
 	}
@@ -235,7 +230,31 @@ func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
 		return fmt.Errorf("image decode error: %w", err)
 	}
 
-	if err := pdf.ImageFrom(img, x, y, nil); err != nil {
+	bounds := img.Bounds()
+	imgW := float64(bounds.Dx())
+	imgH := float64(bounds.Dy())
+
+	margin := 40.0
+	maxW := x * margin
+	maxH := y * margin
+
+	scaleW := maxW / imgW
+	scaleH := maxH / imgH
+	scale := math.Min(scaleW, scaleH)
+
+	scaledW := imgW * scale
+	scaledH := imgH * scale
+
+	y = (y - scaledH) / 2
+  x = (x - scaledW) / 2
+
+	if _, err := imgReader.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("failed to reset image reader: %w", err)
+	}
+
+	rect := &gopdf.Rect{W: scaledW, H: scaledH}
+
+	if err := pdf.ImageFrom(img, x, y, rect); err != nil {
 		return fmt.Errorf("error embedding image in PDF: %w", err)
 	}
 
