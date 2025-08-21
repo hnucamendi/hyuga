@@ -6,6 +6,7 @@ import {
   LoadProject,
   UploadAsset,
   DeleteAsset,
+  GeneratePDF,
 } from "../../wailsjs/go/main/App";
 import {
   Button,
@@ -118,6 +119,11 @@ function ProjectPage() {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const handleProcessPDF = async () => {
+    if (!project) return;
+    await GeneratePDF(project.id);
   };
 
   return (
@@ -234,14 +240,14 @@ function ProjectPage() {
               <Button type="submit">Submitir</Button>
             </form>
           </Modal>
-          <Button
-            variant="gradient"
-            gradient={{ from: "blue", to: "cyan" }}
-            size="lg"
-            onClick={handleAddAsset}
-          >
-            Agregar activo
-          </Button>
+          <Group align="center" justify="center">
+            <Button variant="filled" size="lg" onClick={handleAddAsset}>
+              Agregar activo
+            </Button>
+            <Button color="green" size="lg" onClick={handleProcessPDF}>
+              Finalizar PDF
+            </Button>
+          </Group>
         </AppShellMain>
       )}
       <AppShellFooter>

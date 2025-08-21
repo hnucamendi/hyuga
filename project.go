@@ -169,13 +169,11 @@ func (a *App) GeneratePDF(projectId string) error {
 	pdf := &gopdf.GoPdf{}
 	pageSize := *gopdf.PageSizeA4
 	pdf.Start(gopdf.Config{PageSize: pageSize})
+	pdf.AddPage()
 
-	fontPath := filepath.Join("fonts", "Arial.ttf")
-	if err := pdf.AddTTFFont("Arial", fontPath); err != nil {
+	fontPath := filepath.Join("fonts", "times.ttf")
+	if err := pdf.AddTTFFont("times", fontPath); err != nil {
 		return fmt.Errorf("failed to load font: %w", err)
-	}
-	if err := pdf.SetFont("Arial", "", 14); err != nil {
-		return fmt.Errorf("failed to set font: %w", err)
 	}
 
 	for _, asset := range proj.Assets {
