@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { main } from "../../wailsjs/go/models";
-import { LoadProject, SaveAsset, LoadAssets, DeleteAsset, GeneratePDF } from "../../wailsjs/go/main/App";
+import {
+  LoadProject,
+  SaveAsset,
+  LoadAssets,
+  DeleteAsset,
+  GeneratePDF,
+} from "../../wailsjs/go/main/App";
 import AssetCard from "../components/AssetCard";
 import Button from "../components/Button";
 import AssetCardModal from "../components/AssetCardModal";
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [project, setProject] = useState<main.Project>();
   const [assets, setAssets] = useState<main.AssetMetadata[]>([]);
   const [addingNew, setAddingNew] = useState(false);
@@ -16,18 +22,18 @@ function ProjectPage() {
 
   useEffect(() => {
     const loadProject = async (pid: string) => {
-      const project = await LoadProject(pid)
-      setProject(project)
-    }
+      const project = await LoadProject(pid);
+      setProject(project);
+    };
 
     const loadAssets = async (pid: string) => {
-      const assets = await LoadAssets(pid)
-      setAssets(assets)
-    }
+      const assets = await LoadAssets(pid);
+      setAssets(assets);
+    };
 
     if (!projectId) return;
-    loadProject(projectId)
-    loadAssets(projectId)
+    loadProject(projectId);
+    loadAssets(projectId);
   }, [projectId, assets]);
 
   const updateAsset = (id: string, updates: Partial<main.AssetMetadata>) =>
@@ -50,40 +56,24 @@ function ProjectPage() {
   };
 
   const removeAsset = (projectId: string, assetId: string) => {
-    DeleteAsset(projectId, assetId)
-  }
+    DeleteAsset(projectId, assetId);
+  };
 
-  const handleUpload = (
+  const handleUpload = async (
     type: "sheet" | "cutout",
     id: string,
   ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*";
-
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file || !projectId) return reject("No file or projectId");
-
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const base64 = reader.result?.toString().split(",")[1];
-          if (!base64) return reject("Could not extract base64");
-
-          try {
-            updateAsset(id, { [type]: base64 });
-            resolve(base64);
-          } catch (err) {
-            console.error("UploadPhoto error:", err);
-            reject(err);
-          }
-        };
-        reader.readAsDataURL(file);
-      };
-
-      input.click();
+    const filePath = await OpenFileDialog({
+      title: "Select an image",
+      filters: [{ name: "Images", patterns: ["*.jpg", "*.jpeg", "*.png"] }],
     });
+
+    if (!filePath || !projectId) throw new Error("No file selected");
+
+    // Call Go backend to read + encode file
+    const base64 = await window.backend.App.UploadPhoto(filePath); // <-- replace with your Go binding
+    updateAsset(id, { [type]: base64 });
+    return base64;
   };
 
   const isAssetReady = (a: Partial<main.AssetMetadata>) =>
@@ -124,17 +114,17 @@ function ProjectPage() {
       a.cutout!,
     );
     updateAsset(id, { saved: true });
-    setIsOpen(!isOpen)
+    setIsOpen(!isOpen);
   };
 
   const navigateBack = () => {
-    navigate("/")
-  }
+    navigate("/");
+  };
 
   const handleGeneratePDF = async () => {
-    if (!projectId) throw new Error("missing projectId")
-    await GeneratePDF(projectId)
-  }
+    if (!projectId) throw new Error("missing projectId");
+    await GeneratePDF(projectId);
+  };
 
   if (!projectId) return <div>No project selected.</div>;
 

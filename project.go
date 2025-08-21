@@ -8,6 +8,7 @@ import (
 	"image"
 	"io"
 	"math"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -152,6 +153,22 @@ func (a *App) DeleteAsset(projectId string, assetId string) error {
 	return nil
 }
 
+func (a *App) UploadPhoto(path string) (string, string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", "", err
+	}
+
+	ext := filepath.Ext(path)
+	mimeType := mime.TypeByExtension(ext)
+	if mimeType == "" {
+		mimeType = "image/jpeg" // fallback
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(data)
+	return encoded, mimeType, nil
+}
+
 func (a *App) GeneratePDF(projectId string) error {
 	if projectId == "" {
 		return fmt.Errorf("required project or asset ID not found")
@@ -246,7 +263,7 @@ func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
 	scaledH := imgH * scale
 
 	y = (y - scaledH) / 2
-  x = (x - scaledW) / 2
+	x = (x - scaledW) / 2
 
 	if _, err := imgReader.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("failed to reset image reader: %w", err)

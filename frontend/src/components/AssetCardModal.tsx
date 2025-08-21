@@ -38,13 +38,17 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
 
   if (!isOpen) return null;
 
+  const toDataURL = (b64: string) => {
+    return `data:image/jpeg;base64,${b64}`;
+  };
+
   const resetModal = () => {
-    setId("")
-    setSection("")
-    setPageNumber("")
-    setSheet("")
-    setCutout("")
-  }
+    setId("");
+    setSection("");
+    setPageNumber("");
+    setSheet("");
+    setCutout("");
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -72,15 +76,18 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
         />
 
         <div className="modal-images">
-          <img src={`data:image/jpeg;base64,${sheet}`} alt="Sheet" />
-          <img src={`data:image/jpeg;base64,${cutout}`} alt="Cutout" />
+          {sheet && <img src={toDataURL(sheet)} alt="Sheet" />}
+          {cutout && <img src={toDataURL(cutout)} alt="Cutout" />}
         </div>
 
         <Button
           type="button"
           label={sheet ? "Change Sheet" : "Upload Sheet"}
           onClick={async () => {
+            console.log("SHEET BEFORE");
             const b64 = await onUpload("sheet", id);
+            console.log("SHEET AFTER");
+            console.log("SHEET", b64);
             setSheet(b64);
           }}
         />
@@ -89,6 +96,7 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
           label={cutout ? "Change Cutout" : "Upload Cutout"}
           onClick={async () => {
             const b64 = await onUpload("cutout", id);
+            console.log("CUTOUT", b64);
             setCutout(b64);
           }}
         />
@@ -102,8 +110,8 @@ const AssetCardModal: React.FC<AssetCardModalProps> = ({
               section: section,
               sheet: sheet,
               cutout: cutout,
-            })
-            resetModal()
+            });
+            resetModal();
           }}
           disabled={!canSave}
         />
