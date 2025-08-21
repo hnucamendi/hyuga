@@ -77,6 +77,7 @@ function ProjectPage() {
   const handleDelete = async (id: string) => {
     if (!project) return;
     await DeleteAsset(project?.id, id);
+    setProject(await LoadProject(project.id));
   };
 
   const toBase64 = (f: File): Promise<string> => {
@@ -95,7 +96,7 @@ function ProjectPage() {
       vals.section === "" ||
       vals.pageNumber === "" ||
       assetId.current === "" ||
-      !projectId
+      !project?.id
     ) {
       return;
     }
@@ -103,7 +104,7 @@ function ProjectPage() {
     try {
       const sb64 = await toBase64(vals.sheet);
       const cb64 = await toBase64(vals.cutout);
-      await UploadAsset(projectId, {
+      await UploadAsset(project.id, {
         id: assetId.current,
         sheet: sb64,
         cutout: cb64,
@@ -111,6 +112,7 @@ function ProjectPage() {
         section: vals.section,
       });
 
+      setProject(await LoadProject(project.id));
       form.reset();
       close();
     } catch (error) {
@@ -131,9 +133,9 @@ function ProjectPage() {
         <AppShellMain
           style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
         >
+          <Title order={2}>{project?.name}</Title>
           {project?.assets.map((as) => (
             <Container size="lg" px={{ base: "md", sm: "lg" }}>
-              <Title order={2}>{project?.name}</Title>
               <Paper
                 my="lg"
                 withBorder
