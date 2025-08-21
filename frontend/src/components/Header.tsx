@@ -1,40 +1,49 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Button from "./Button"
+import { Button, Group, Box, Title } from "@mantine/core";
+import { IconFilePlus } from "@tabler/icons-react";
 
 type HeaderProps = {
-  createProject?: any
-  projectId?: string
+  createProject?: any;
+  projectId?: string;
 };
 
 const Header: React.FC<HeaderProps> = ({ createProject, projectId }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const title = <Title order={1}>Hyūga</Title>;
   if (projectId) {
     return (
-
-      <div className="header">
-        <h1>Hyūga</h1>
-
-        <Button
-          label="Atras"
-          onClick={() => navigate("/")}
-          type="button"
-        />
-      </div>
-    )
+      <Box p="2em">
+        <Group justify="space-between">
+          {title}
+          <Button
+            leftSection={<IconFilePlus size={18} />}
+            variant="filled"
+            size="sm"
+            onClick={createProject}
+          >
+            Crear Proyecto
+          </Button>
+        </Group>
+      </Box>
+    );
   }
 
   return (
-    <div className="header">
-      <h1>Hyūga</h1>
-      <Button
-        label="Crear Proyecto"
-        onClick={createProject}
-        type="button"
-      />
-    </div>
+    <Box p="2em">
+      <Group justify="space-between">
+        {title}
+        <Button
+          leftSection={<IconFilePlus size={18} />}
+          variant="filled"
+          size="sm"
+          onClick={createProject}
+        >
+          Crear Proyecto
+        </Button>
+      </Group>
+    </Box>
   );
-}
+};
 
-export default Header
-
+export default Header;

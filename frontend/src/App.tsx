@@ -1,17 +1,18 @@
-import { Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import ProjectPage from './pages/ProjectPage';
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import ProjectPage from "./pages/ProjectPage";
+import "@mantine/core/styles.css";
+import { MantineProvider } from "@mantine/core";
 
 function App() {
   return (
-    <div>
+    <MantineProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route index path="/" element={<Home />} />
         <Route path="/project/:projectId" element={<ProjectPage />} />
       </Routes>
-    </div>
-  )
+    </MantineProvider>
+  );
 }
 
 export default App;
-

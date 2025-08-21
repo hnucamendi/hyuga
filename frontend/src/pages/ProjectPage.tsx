@@ -4,7 +4,8 @@ import type { main } from "../../wailsjs/go/models";
 import { useEffect, useRef, useState } from "react";
 import { LoadProject, UploadPhoto } from "../../wailsjs/go/main/App";
 import Aside from "../components/Aside";
-import Button from "../components/Button";
+import { Button } from "@mantine/core";
+
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -75,15 +76,11 @@ function ProjectPage() {
       <Header projectId={projectId} />
       <h2>{project?.name}</h2>
       <Aside />
-      <Button
-        label="Añadir foto de Hoja"
-        onClick={() => handleUpload("sheet")}
-      />
-      <Button
-        label="Añadir foto de Nota"
-        onClick={() => handleUpload("cutout")}
-      />
-      <Button label="Añadir" onClick={handleAddMetadataPacket} />
+      <Button onClick={() => handleUpload("sheet")}>Añadir foto de Hoja</Button>
+      <Button onClick={() => handleUpload("cutout")}>
+        Añadir foto de Nota
+      </Button>
+      <Button onClick={handleAddMetadataPacket}>Añadir</Button>
     </>
   );
 }
