@@ -28,11 +28,10 @@ type AssetMetadata struct {
 	Cutout     string `json:"cutout"`
 	PageNumber string `json:"pageNumber"`
 	Section    string `json:"section"`
-	Saved      bool   `json:"saved"`
 }
 
-func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, section string, sheet string, cutout string) error {
-	if projectId == "" || assetId == "" {
+func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
+	if projectId == "" || as.ID == "" {
 		return fmt.Errorf("projectId and assetId are required")
 	}
 
@@ -52,21 +51,13 @@ func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, sec
 		return fmt.Errorf("invalid project JSON: %w", err)
 	}
 
-	asset := AssetMetadata{
-		ID:         assetId,
-		PageNumber: pageNumber,
-		Section:    section,
-		Sheet:      sheet,
-		Cutout:     cutout,
-	}
-
-	ok := ensureUnique(proj, asset)
+	ok := ensureUnique(proj, as)
 	if !ok {
 		fmt.Println(concat("project: ", proj.Id, " already exists"))
 		return nil
 	}
 
-	proj.Assets = append(proj.Assets, asset)
+	proj.Assets = append(proj.Assets, as)
 
 	data, err := json.MarshalIndent(proj, "", "  ")
 	if err != nil {
@@ -150,21 +141,6 @@ func (a *App) DeleteAsset(projectId string, assetId string) error {
 		return fmt.Errorf("failed to write updated project file: %w", err)
 	}
 	return nil
-}
-
-func (a *App) UploadPhoto(fn string) (string, error) {
-	fb, err := os.ReadFile(fn)
-	fmt.Println("TAMOSIZE", len(fb))
-	if err != nil {
-		return "", err
-	}
-	// // mimeType := mime.TypeByExtension(ext)
-	// if mimeType == "" {
-	// 	mimeType = "image/jpeg" // fallback
-	// }
-	//
-	// encoded := base64.StdEncoding.EncodeToString(data)
-	return "", nil
 }
 
 func (a *App) GeneratePDF(projectId string) error {

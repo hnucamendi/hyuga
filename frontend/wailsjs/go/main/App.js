@@ -30,10 +30,6 @@ export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }
 
-export function SaveAsset(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['App']['SaveAsset'](arg1, arg2, arg3, arg4, arg5, arg6);
-}
-
-export function UploadPhoto(arg1) {
-  return window['go']['main']['App']['UploadPhoto'](arg1);
+export function UploadAsset(arg1, arg2) {
+  return window['go']['main']['App']['UploadAsset'](arg1, arg2);
 }

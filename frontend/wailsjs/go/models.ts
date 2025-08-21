@@ -6,7 +6,6 @@ export namespace main {
 	    cutout: string;
 	    pageNumber: string;
 	    section: string;
-	    saved: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AssetMetadata(source);
@@ -19,7 +18,6 @@ export namespace main {
 	        this.cutout = source["cutout"];
 	        this.pageNumber = source["pageNumber"];
 	        this.section = source["section"];
-	        this.saved = source["saved"];
 	    }
 	}
 	export class Project {
