@@ -1,17 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"image"
+	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/google/uuid"
-	rpg "github.com/kevinburke/go-random-project-generator"
+	"github.com/signintech/gopdf"
 )
 
 type PhotoType string
@@ -21,114 +22,58 @@ const (
 	CUTOUT PhotoType = "cutout"
 )
 
-type Project struct {
-	Id        string            `json:"id"`
-	Name      string            `json:"name"`
-	CreatedAt string            `json:"created_at"`
-	Assets    []string          `json:"assets"`
-	Metadata  map[string]string `json:"metadata"`
+type AssetMetadata struct {
+	ID         string `json:"id"`
+	Sheet      string `json:"sheet"`
+	Cutout     string `json:"cutout"`
+	PageNumber string `json:"pageNumber"`
+	Section    string `json:"section"`
+	Saved      bool   `json:"saved"`
 }
 
-func (a *App) LoadProjects() ([]Project, error) {
-	base, err := getBaseConfigPath()
-	if err != nil {
-		return nil, err
+func (a *App) SaveAsset(projectId string, assetId string, pageNumber string, section string, sheet string, cutout string) error {
+	if projectId == "" || assetId == "" {
+		return fmt.Errorf("projectId and assetId are required")
 	}
 
-	projectsPath := filepath.Join(base, "projects")
-	err = os.MkdirAll(projectsPath, 0755)
-	if err != nil {
-		return nil, err
-	}
-
-	dir, err := os.ReadDir(projectsPath)
-	if err != nil {
-		return nil, err
-	}
-
-	var res = make([]Project, len(dir))
-	for i, v := range dir {
-		if !v.IsDir() {
-			continue
-		}
-		cfgPath := filepath.Join(projectsPath, v.Name(), "project.json")
-		data, err := os.ReadFile(cfgPath)
-		if err != nil {
-			continue
-		}
-		var p Project
-		if err := json.Unmarshal(data, &p); err != nil {
-			continue
-		}
-		res[i] = p
-	}
-	return res, nil
-}
-
-func (a *App) LoadProject(id string) (*Project, error) {
-	if id == "" {
-		return nil, errors.New("invalid project ID")
-	}
-
-	base, err := getBaseConfigPath()
-	if err != nil {
-		return nil, err
-	}
-	path := filepath.Join(base, "projects", id, "project.json")
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var p *Project
-	err = json.Unmarshal(b, &p)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
-}
-
-func getBaseConfigPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-
-	appDir := filepath.Join(dir, PROJECT_NAME)
-	return appDir, os.MkdirAll(appDir, 0755)
-}
-
-func (a *App) CreateProject() error {
-	name := rpg.Generate()
-	id := uuid.NewString()
 	base, err := getBaseConfigPath()
 	if err != nil {
 		return err
 	}
 
-	projectsDir := filepath.Join(base, "projects", id)
-	if err := os.MkdirAll(projectsDir, 0755); err != nil {
-		return err
-	}
-
-	loc, err := time.LoadLocation("Local")
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read project.json: %w", err)
 	}
 
-	proj := Project{
-		Id:        id,
-		Name:      name,
-		CreatedAt: time.Now().Local().In(loc).Format(time.DateTime),
-		Assets:    []string{},
-		Metadata:  map[string]string{},
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON: %w", err)
 	}
+
+	asset := AssetMetadata{
+		ID:         assetId,
+		PageNumber: pageNumber,
+		Section:    section,
+		Sheet:      sheet,
+		Cutout:     cutout,
+	}
+
+	ok := ensureUnique(proj, asset)
+	if !ok {
+		fmt.Println(concat("project: ", proj.Id, " already exists"))
+		return nil
+	}
+
+	proj.Assets = append(proj.Assets, asset)
 
 	data, err := json.MarshalIndent(proj, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(filepath.Join(projectsDir, "project.json"), data, 0644)
+	err = os.WriteFile(projectPath, data, 0644)
 	if err != nil {
 		return err
 	}
@@ -136,46 +81,196 @@ func (a *App) CreateProject() error {
 	return nil
 }
 
-func (a *App) DeleteProject(id string) error {
+func (a *App) LoadAssets(projectId string) ([]AssetMetadata, error) {
+	if projectId == "" {
+		return nil, fmt.Errorf("projectId required")
+	}
+
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return nil, fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	return proj.Assets, nil
+}
+
+func (a *App) DeleteAsset(projectId string, assetId string) error {
+	if projectId == "" || assetId == "" {
+		return fmt.Errorf("required project or asset ID not found")
+	}
+
 	base, err := getBaseConfigPath()
 	if err != nil {
 		return err
 	}
 
-	path := filepath.Join(base, "projects", id)
-	err = os.RemoveAll(path)
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	index := -1
+	for i, asset := range proj.Assets {
+		if asset.ID == assetId {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return fmt.Errorf("asset with ID %s not found in project", assetId)
+	}
+
+	proj.Assets[index] = proj.Assets[len(proj.Assets)-1]
+	proj.Assets = proj.Assets[:len(proj.Assets)-1]
+
+	updated, err := json.MarshalIndent(proj, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to serialize updated project: %w", err)
+	}
+
+	if err := os.WriteFile(projectPath, updated, 0644); err != nil {
+		return fmt.Errorf("failed to write updated project file: %w", err)
+	}
+	return nil
+}
+
+func (a *App) UploadPhoto(fn string) (string, error) {
+	fb, err := os.ReadFile(fn)
+	fmt.Println("TAMOSIZE", len(fb))
+	if err != nil {
+		return "", err
+	}
+	// // mimeType := mime.TypeByExtension(ext)
+	// if mimeType == "" {
+	// 	mimeType = "image/jpeg" // fallback
+	// }
+	//
+	// encoded := base64.StdEncoding.EncodeToString(data)
+	return "", nil
+}
+
+func (a *App) GeneratePDF(projectId string) error {
+	if projectId == "" {
+		return fmt.Errorf("required project or asset ID not found")
+	}
+
+	base, err := getBaseConfigPath()
 	if err != nil {
 		return err
+	}
+
+	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	b, err := os.ReadFile(projectPath)
+	if err != nil {
+		return fmt.Errorf("cannot read project folder: %w", err)
+	}
+
+	var proj Project
+	if err := json.Unmarshal(b, &proj); err != nil {
+		return fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	fmt.Println("TAMO")
+
+	pdf := &gopdf.GoPdf{}
+	pageSize := *gopdf.PageSizeA4
+	pdf.Start(gopdf.Config{PageSize: pageSize})
+
+	fontPath := filepath.Join("fonts", "Arial.ttf")
+	if err := pdf.AddTTFFont("Arial", fontPath); err != nil {
+		return fmt.Errorf("failed to load font: %w", err)
+	}
+	if err := pdf.SetFont("Arial", "", 14); err != nil {
+		return fmt.Errorf("failed to set font: %w", err)
+	}
+
+	for _, asset := range proj.Assets {
+		pdf.AddPage()
+
+		// Write metadata
+		pdf.SetY(40)
+		pdf.Cell(nil, fmt.Sprintf("Section: %s", asset.Section))
+		pdf.Br(20)
+		pdf.Cell(nil, fmt.Sprintf("Page Number: %s", asset.PageNumber))
+		pdf.Br(20)
+
+		if asset.Cutout != "" {
+			if err := drawBase64Image(pdf, asset.Cutout, pageSize.W/2, pageSize.H/2); err != nil {
+				fmt.Printf("warning: failed to decode cutout: %v\n", err)
+			}
+		}
+	}
+
+	outputPath := filepath.Join(projectPath, "../", "output.pdf")
+	if err := pdf.WritePdf(outputPath); err != nil {
+		return fmt.Errorf("failed to write PDF: %w", err)
 	}
 
 	return nil
 }
 
-func (a *App) UploadPhoto(base64Data string, imageType PhotoType, projectId string, attributeId string) error {
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		return fmt.Errorf("failed to decode base64: %w", err)
+// drawBase64Image decodes a base64 string and draws it at the specified x,y
+func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
+	// Strip data URI prefix if present
+	if idx := strings.Index(base64Str, "base64,"); idx != -1 {
+		base64Str = base64Str[idx+7:]
 	}
 
-	base, err := getBaseConfigPath()
+	imgBytes, err := base64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
-		return err
+		return fmt.Errorf("base64 decode error: %w", err)
 	}
 
-	dirPath := filepath.Join(base, "projects", projectId, attributeId, "images")
-	err = os.MkdirAll(dirPath, 0755)
+	imgReader := bytes.NewReader(imgBytes)
+	img, _, err := image.Decode(imgReader)
 	if err != nil {
-		return fmt.Errorf("failed to create project path: %w", err)
+		return fmt.Errorf("image decode error: %w", err)
 	}
 
-	timestamp := time.Now().Format("20060102-150405")
-	filename := fmt.Sprintf("%s-%s.jpg", strings.ToLower(string(imageType)), timestamp)
-	filePath := filepath.Join(dirPath, filename)
+	bounds := img.Bounds()
+	imgW := float64(bounds.Dx())
+	imgH := float64(bounds.Dy())
 
-	// 4. Write file
-	err = os.WriteFile(filePath, data, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write image: %w", err)
+	margin := 40.0
+	maxW := x * margin
+	maxH := y * margin
+
+	scaleW := maxW / imgW
+	scaleH := maxH / imgH
+	scale := math.Min(scaleW, scaleH)
+
+	scaledW := imgW * scale
+	scaledH := imgH * scale
+
+	y = (y - scaledH) / 2
+	x = (x - scaledW) / 2
+
+	if _, err := imgReader.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("failed to reset image reader: %w", err)
+	}
+
+	rect := &gopdf.Rect{W: scaledW, H: scaledH}
+
+	if err := pdf.ImageFrom(img, x, y, rect); err != nil {
+		return fmt.Errorf("error embedding image in PDF: %w", err)
 	}
 
 	return nil

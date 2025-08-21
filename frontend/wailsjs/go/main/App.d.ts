@@ -4,10 +4,18 @@ import {main} from '../models';
 
 export function CreateProject():Promise<void>;
 
+export function DeleteAsset(arg1:string,arg2:string):Promise<void>;
+
 export function DeleteProject(arg1:string):Promise<void>;
+
+export function GeneratePDF(arg1:string):Promise<void>;
+
+export function LoadAssets(arg1:string):Promise<Array<main.AssetMetadata>>;
 
 export function LoadProject(arg1:string):Promise<main.Project>;
 
 export function LoadProjects():Promise<Array<main.Project>>;
 
-export function UploadPhoto(arg1:string,arg2:main.PhotoType,arg3:string,arg4:string):Promise<void>;
+export function SaveAsset(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<void>;
+
+export function UploadPhoto(arg1:string):Promise<string>;

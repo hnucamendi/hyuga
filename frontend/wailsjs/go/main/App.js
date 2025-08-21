@@ -6,8 +6,20 @@ export function CreateProject() {
   return window['go']['main']['App']['CreateProject']();
 }
 
+export function DeleteAsset(arg1, arg2) {
+  return window['go']['main']['App']['DeleteAsset'](arg1, arg2);
+}
+
 export function DeleteProject(arg1) {
   return window['go']['main']['App']['DeleteProject'](arg1);
+}
+
+export function GeneratePDF(arg1) {
+  return window['go']['main']['App']['GeneratePDF'](arg1);
+}
+
+export function LoadAssets(arg1) {
+  return window['go']['main']['App']['LoadAssets'](arg1);
 }
 
 export function LoadProject(arg1) {
@@ -18,6 +30,10 @@ export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }
 
-export function UploadPhoto(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['UploadPhoto'](arg1, arg2, arg3, arg4);
+export function SaveAsset(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SaveAsset'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function UploadPhoto(arg1) {
+  return window['go']['main']['App']['UploadPhoto'](arg1);
 }
