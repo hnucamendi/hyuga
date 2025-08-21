@@ -16,19 +16,21 @@ import {
   AppShellHeader,
   AppShellMain,
   AppShellFooter,
+  Box,
   Grid,
   GridCol,
-  AspectRatio,
 } from "@mantine/core";
 import Header from "../components/Header";
 import type { main } from "../../wailsjs/go/models";
 import "../App.css";
+import { useMediaQuery } from "@mantine/hooks";
 
 function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<main.Project[]>([]);
   const hh = 100;
   const fh = 80;
+  const isMdUp = useMediaQuery("(min-width: 62em)"); // ~992px (Mantine md)
 
   useEffect(() => {
     const init = async () => {
@@ -70,58 +72,68 @@ function Home() {
     }
   };
 
-  if (!projects || projects.length === 0) {
-    return (
-      <AppShell header={{ height: hh }} padding="md">
-        <AppShell.Header>
-          <Header createProject={handleCreateNewProject} />
-        </AppShell.Header>
-        <AppShell.Main>
-          <h1>No tienes algun proyecto todavía</h1>
-        </AppShell.Main>
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell footer={{ height: fh }} header={{ height: hh }}>
       <AppShellHeader>
         <Header createProject={handleCreateNewProject} />
       </AppShellHeader>
-      <AppShellMain>
-        <Grid justify="center" align="flex-start">
-          {projects.map((p) => (
-            <AspectRatio>
-              <GridCol span="content">
-                <Group key={p.id} justify="center">
-                  <Paper radius="md" shadow="md" withBorder p="xl">
-                    <Title order={2}>{p.name}</Title>
-                    <ButtonGroup orientation="vertical">
+      <AppShell.Main>
+        {(!projects || projects.length === 0) ? (
+          <Box px={{ base: "md", sm: "lg" }} py="lg">
+            <Title order={2} mb="sm">
+              No tienes algún proyecto todavía
+            </Title>
+            <Button onClick={handleCreateNewProject}>Crear proyecto</Button>
+          </Box>
+        ) : (
+          <Box px={{ base: "md", sm: "lg" }} py="lg" w="100%">
+            <Grid gutter="lg">
+              {projects.map((p) => (
+                <GridCol
+                  key={p.id}
+                  span={{ base: 12, sm: 6, md: 4, lg: 3 }}
+                >
+                  <Paper radius="md" shadow="md" withBorder p="lg" h="100%">
+                    <Group justify="center" mb="xs" wrap="nowrap">
+                      <Title order={3} lineClamp={1}>
+                        {p.name}
+                      </Title>
+                    </Group>
+
+                    <Text size="sm" c="dimmed" mb="md">
+                      {p.created_at}
+                    </Text>
+
+                    <Group
+                      gap="xs"
+                      wrap="wrap"
+                      justify="center"
+                      grow={!isMdUp}
+                    >
                       <Button
                         onClick={() => handleOpenProject(p.id)}
                         variant="outline"
                         size="sm"
-                        color="black"
                       >
-                        Abrir Proyecto
+                        Abrir proyecto
                       </Button>
+
                       <Button
                         onClick={() => handleDeleteProject(p.id)}
                         variant="outline"
                         size="sm"
                         color="red"
                       >
-                        Borrar Proyecto
+                        Borrar proyecto
                       </Button>
-                    </ButtonGroup>
-                    <Text>{p.created_at}</Text>
+                    </Group>
                   </Paper>
-                </Group>
-              </GridCol>
-            </AspectRatio>
-          ))}
-        </Grid>
-      </AppShellMain>
+                </GridCol>
+              ))}
+            </Grid>
+          </Box>
+        )}
+      </AppShell.Main>
       <AppShellFooter>
         <Title> </Title>
       </AppShellFooter>

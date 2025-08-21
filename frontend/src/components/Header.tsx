@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Group, Box, Title } from "@mantine/core";
-import { IconFilePlus } from "@tabler/icons-react";
+import { IconArrowBack, IconFilePlus } from "@tabler/icons-react";
 
 type HeaderProps = {
   createProject?: any;
@@ -10,12 +10,24 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ createProject, projectId }) => {
   const navigate = useNavigate();
-  const title = <Title order={1}>Hyūga</Title>;
-  if (projectId) {
-    return (
-      <Box p="2em">
+
+  return (
+    <Box p="2em">
+      {(projectId) ? (
         <Group justify="space-between">
-          {title}
+          <Title order={1}>Hyūga</Title>
+          <Button
+            leftSection={<IconArrowBack size={18} />}
+            variant="filled"
+            size="sm"
+            onClick={() => navigate("/")}
+          >
+            Atrás
+          </Button>
+        </Group>
+      ) : (
+        <Group justify="space-between" align="center">
+          <Title order={1}>Hyūga</Title>
           <Button
             leftSection={<IconFilePlus size={18} />}
             variant="filled"
@@ -25,25 +37,9 @@ const Header: React.FC<HeaderProps> = ({ createProject, projectId }) => {
             Crear Proyecto
           </Button>
         </Group>
-      </Box>
-    );
-  }
-
-  return (
-    <Box p="2em">
-      <Group justify="space-between">
-        {title}
-        <Button
-          leftSection={<IconFilePlus size={18} />}
-          variant="filled"
-          size="sm"
-          onClick={createProject}
-        >
-          Crear Proyecto
-        </Button>
-      </Group>
+      )}
     </Box>
-  );
-};
+  )
+}
 
 export default Header;
