@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLoaderData, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   CreateProject,
   LoadProjects,
@@ -11,10 +11,10 @@ import {
   Group,
   Paper,
   Title,
-  ButtonGroup,
   AppShell,
-  AppShellHeader,
+  Container,
   AppShellMain,
+  AppShellHeader,
   AppShellFooter,
   Box,
   Grid,
@@ -73,26 +73,25 @@ function Home() {
   };
 
   return (
-    <AppShell footer={{ height: fh }} header={{ height: hh }}>
+    <AppShell header={{ height: hh }} footer={{ height: fh }} padding={0}>
       <AppShellHeader>
         <Header createProject={handleCreateNewProject} />
       </AppShellHeader>
-      <AppShell.Main>
-        {(!projects || projects.length === 0) ? (
-          <Box px={{ base: "md", sm: "lg" }} py="lg">
-            <Title order={2} mb="sm">
-              No tienes algún proyecto todavía
-            </Title>
-            <Button onClick={handleCreateNewProject}>Crear proyecto</Button>
-          </Box>
-        ) : (
-          <Box px={{ base: "md", sm: "lg" }} py="lg" w="100%">
+      <AppShellMain
+        style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
+      >
+        <Container size="lg" px={{ base: "md", sm: "lg" }} py="lg">
+          {!projects || projects.length === 0 ? (
+            <Box px={{ base: "md", sm: "lg" }} py="lg">
+              <Title order={2} mb="sm">
+                No tienes algún proyecto todavía
+              </Title>
+              <Button onClick={handleCreateNewProject}>Crear proyecto</Button>
+            </Box>
+          ) : (
             <Grid gutter="lg">
               {projects.map((p) => (
-                <GridCol
-                  key={p.id}
-                  span={{ base: 12, sm: 6, md: 4, lg: 3 }}
-                >
+                <GridCol key={p.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
                   <Paper radius="md" shadow="md" withBorder p="lg" h="100%">
                     <Group justify="center" mb="xs" wrap="nowrap">
                       <Title order={3} lineClamp={1}>
@@ -104,12 +103,7 @@ function Home() {
                       {p.created_at}
                     </Text>
 
-                    <Group
-                      gap="xs"
-                      wrap="wrap"
-                      justify="center"
-                      grow={!isMdUp}
-                    >
+                    <Group gap="xs" wrap="wrap" justify="center" grow={!isMdUp}>
                       <Button
                         onClick={() => handleOpenProject(p.id)}
                         variant="outline"
@@ -131,9 +125,9 @@ function Home() {
                 </GridCol>
               ))}
             </Grid>
-          </Box>
-        )}
-      </AppShell.Main>
+          )}
+        </Container>
+      </AppShellMain>
       <AppShellFooter>
         <Title> </Title>
       </AppShellFooter>

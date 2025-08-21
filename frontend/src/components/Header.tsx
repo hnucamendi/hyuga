@@ -1,6 +1,5 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Group, Box, Title } from "@mantine/core";
+import { Button, Group, Box, Title, Container } from "@mantine/core";
 import { IconArrowBack, IconFilePlus } from "@tabler/icons-react";
 
 type HeaderProps = {
@@ -8,38 +7,50 @@ type HeaderProps = {
   projectId?: string;
 };
 
-const Header: React.FC<HeaderProps> = ({ createProject, projectId }) => {
+export default function Header({ createProject, projectId }: HeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <Box p="2em">
-      {(projectId) ? (
-        <Group justify="space-between">
-          <Title order={1}>Hyūga</Title>
-          <Button
-            leftSection={<IconArrowBack size={18} />}
-            variant="filled"
-            size="sm"
-            onClick={() => navigate("/")}
-          >
-            Atrás
-          </Button>
-        </Group>
-      ) : (
-        <Group justify="space-between" align="center">
-          <Title order={1}>Hyūga</Title>
-          <Button
-            leftSection={<IconFilePlus size={18} />}
-            variant="filled"
-            size="sm"
-            onClick={createProject}
-          >
-            Crear Proyecto
-          </Button>
-        </Group>
-      )}
-    </Box>
-  )
-}
+    <Box
+      // no horizontal padding here; Container below owns the rails
+      style={{
+        background: "var(--mantine-color-body)",
+        overflowX: "clip", // safety net
+      }}
+    >
+      <Container size="lg" px={{ base: "md", sm: "lg" }}>
+        <Group
+          justify="space-between"
+          align="center"
+          wrap="wrap"
+          gap="md"
+          py={{ base: "md", sm: "md" }}
+        >
+          <Title order={2} style={{ lineHeight: 1.1, wordBreak: "break-word" }}>
+            Hyūga
+          </Title>
 
-export default Header;
+          {projectId ? (
+            <Button
+              leftSection={<IconArrowBack size={16} />}
+              variant="filled"
+              size="sm"
+              onClick={() => navigate("/")}
+            >
+              Atrás
+            </Button>
+          ) : (
+            <Button
+              leftSection={<IconFilePlus size={16} />}
+              variant="filled"
+              size="sm"
+              onClick={createProject}
+            >
+              Crear Proyecto
+            </Button>
+          )}
+        </Group>
+      </Container>
+    </Box>
+  );
+}

@@ -1,12 +1,12 @@
 html {
-  background-color: rgba(27, 38, 54, 1);
   text-align: center;
   color: white;
 }
 
 body {
   margin: 0;
-  color: white;
+  color: white; /* or use Mantine tokens */
+  background: var(--mantine-color-body); /* ensures AppShell + page match */
   font-family:
     "Nunito",
     -apple-system,
@@ -31,7 +31,14 @@ body {
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
+html,
+body,
+#root,
 #app {
-  height: 100vh;
-  text-align: center;
+  height: 100%;
+  min-height: 100dvh; /* dynamic viewport on mobile */
+}
+
+body {
+  overflow-x: hidden; /* belt-and-suspenders */
 }

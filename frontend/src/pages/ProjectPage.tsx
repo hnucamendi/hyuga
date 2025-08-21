@@ -41,7 +41,7 @@ function ProjectPage() {
   const [project, setProject] = useState<main.Project>();
   const [opened, { open, close }] = useDisclosure(false);
   const assetId = useRef("");
-  const hh = 100;
+  const hh = 70;
   const fh = 80;
 
   useEffect(() => {
@@ -50,7 +50,7 @@ function ProjectPage() {
       setProject(await LoadProject(projectId));
     };
     l();
-  });
+  }, [projectId]);
 
   const form = useForm<FormVals>({
     mode: "controlled",
@@ -119,7 +119,7 @@ function ProjectPage() {
   };
 
   return (
-    <AppShell footer={{ height: fh }} header={{ height: hh }}>
+    <AppShell footer={{ height: fh }} header={{ height: hh }} padding={0}>
       <AppShellHeader>
         <Header projectId={projectId} />
       </AppShellHeader>
@@ -128,59 +128,66 @@ function ProjectPage() {
           <Title>No projectID found</Title>
         </AppShellMain>
       ) : (
-        <AppShellMain>
-          <h2>{project?.name}</h2>
+        <AppShellMain
+          style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
+        >
           {project?.assets.map((as) => (
-            <Paper m="2em" withBorder shadow="sm" radius="md">
-              <Stack justify="center">
-                <Group gap="md" p="1em 2em" justify="space-between">
-                  <Group gap="md" justify="center">
-                    <Text fw={500} c="dimmed">
-                      Página:
-                    </Text>
-                    <Text fw={600} size="lg">
-                      {as.pageNumber}
-                    </Text>
-                    <Text fw={500} c="dimmed">
-                      Sección:
-                    </Text>
-                    <Text fw={600} size="lg">
-                      {as.section}
-                    </Text>
+            <Container size="lg" px={{ base: "md", sm: "lg" }}>
+              <Title order={2}>{project?.name}</Title>
+              <Paper
+                my="lg"
+                withBorder
+                shadow="sm"
+                radius="md"
+                p={{ base: "md", sm: "lg" }}
+                key={as.id}
+              >
+                <Stack>
+                  <Group gap="md" justify="space-between" wrap="wrap">
+                    <Group gap="md">
+                      <Text fw={500} c="dimmed">
+                        Página:
+                      </Text>
+                      <Text fw={600} size="lg">
+                        {as.pageNumber}
+                      </Text>
+                      <Text fw={500} c="dimmed">
+                        Sección:
+                      </Text>
+                      <Text fw={600} size="lg">
+                        {as.section}
+                      </Text>
+                    </Group>
+                    <Group>
+                      <Button
+                        color="red"
+                        size="sm"
+                        rightSection={<IconTrash width={18} />}
+                        onClick={() => handleDelete(as.id)}
+                      >
+                        Borrar
+                      </Button>
+                    </Group>
                   </Group>
-                  <Group>
-                    <Button
-                      color="red"
-                      size="sm"
-                      rightSection={<IconTrash width={18} />}
-                      onClick={() => handleDelete(as.id)}
-                    >
-                      Borrar
-                    </Button>
-                  </Group>
-                </Group>
-                <SimpleGrid
-                  cols={{ base: 1, sm: 2 }}
-                  spacing="lg"
-                  verticalSpacing="lg"
-                >
-                  <Image
-                    src={as.sheet}
-                    alt="Foto de hoja"
-                    radius="md"
-                    fit="contain"
-                    w="100%"
-                  />
-                  <Image
-                    src={as.cutout}
-                    alt="Foto de nota"
-                    radius="md"
-                    fit="contain"
-                    w="100%"
-                  />
-                </SimpleGrid>
-              </Stack>
-            </Paper>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                    <Image
+                      src={as.sheet}
+                      alt="Foto de hoja"
+                      radius="md"
+                      fit="contain"
+                      w="100%"
+                    />
+                    <Image
+                      src={as.cutout}
+                      alt="Foto de nota"
+                      radius="md"
+                      fit="contain"
+                      w="100%"
+                    />
+                  </SimpleGrid>
+                </Stack>
+              </Paper>
+            </Container>
           ))}
           <Modal p="2em" opened={opened} onClose={close} title="Activo">
             <form onSubmit={form.onSubmit((v) => handleUpload(v))}>
