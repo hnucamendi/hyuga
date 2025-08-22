@@ -17,12 +17,16 @@ type HeaderProps = {
   createProject?: any;
   openModal?: any;
   projectId?: string;
+  handleAddAsset?: any;
+  handleProcessPDF?: any;
 };
 
 export default function Header({
   createProject,
   projectId,
   openModal,
+  handleAddAsset,
+  handleProcessPDF,
 }: HeaderProps) {
   const navigate = useNavigate();
 
@@ -47,14 +51,22 @@ export default function Header({
           </Title>
 
           {projectId ? (
-            <Button
-              leftSection={<IconArrowBack size={16} />}
-              variant="filled"
-              size="sm"
-              onClick={() => navigate("/")}
-            >
-              Atrás
-            </Button>
+            <Group align="center" justify="center">
+              <Button color="green" size="sm" onClick={handleProcessPDF}>
+                Finalizar PDF
+              </Button>
+              <Button variant="filled" size="sm" onClick={handleAddAsset}>
+                Agregar activo
+              </Button>
+              <Button
+                leftSection={<IconArrowBack size={16} />}
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/")}
+              >
+                Atrás
+              </Button>
+            </Group>
           ) : (
             <Group>
               <Button

@@ -137,7 +137,11 @@ function ProjectPage() {
   return (
     <AppShell footer={{ height: fh }} header={{ height: hh }} padding={0}>
       <AppShellHeader>
-        <Header projectId={projectId} />
+        <Header
+          projectId={projectId}
+          handleAddAsset={handleAddAsset}
+          handleProcessPDF={handleProcessPDF}
+        />
       </AppShellHeader>
       {!projectId ? (
         <AppShellMain>
@@ -257,14 +261,6 @@ function ProjectPage() {
               <Button type="submit">Submitir</Button>
             </form>
           </Modal>
-          <Group align="center" justify="center">
-            <Button variant="filled" size="lg" onClick={handleAddAsset}>
-              Agregar activo
-            </Button>
-            <Button color="green" size="lg" onClick={handleProcessPDF}>
-              Finalizar PDF
-            </Button>
-          </Group>
         </AppShellMain>
       )}
       <AppShellFooter>
