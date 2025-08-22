@@ -13,6 +13,9 @@ github.com/google/uuid
 # github.com/gorilla/websocket v1.5.3
 ## explicit; go 1.12
 github.com/gorilla/websocket
+# github.com/hnucamendi/hyuga/rpg v0.0.0-20250822153337-4a823b4f9617
+## explicit; go 1.25.0
+github.com/hnucamendi/hyuga/rpg
 # github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e
 ## explicit; go 1.14
 github.com/jchv/go-winloader
@@ -21,9 +24,9 @@ github.com/jchv/go-winloader/internal/memloader
 github.com/jchv/go-winloader/internal/pe
 github.com/jchv/go-winloader/internal/vmem
 github.com/jchv/go-winloader/internal/winloader
-# github.com/kevinburke/go-random-project-generator v0.0.0-20160904053023-8d7524da57ef
-## explicit
-github.com/kevinburke/go-random-project-generator
+# github.com/kpechenenko/rword v0.0.4
+## explicit; go 1.21
+github.com/kpechenenko/rword
 # github.com/labstack/echo/v4 v4.13.3
 ## explicit; go 1.20
 github.com/labstack/echo/v4
