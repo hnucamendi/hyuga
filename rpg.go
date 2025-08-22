@@ -1,4 +1,4 @@
-package rpg
+package main
 
 import (
 	"path/filepath"

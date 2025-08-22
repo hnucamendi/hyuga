@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hnucamendi/hyuga/rpg"
 )
 
 type Project struct {
@@ -108,7 +107,7 @@ func ensureUnique(p Project, a AssetMetadata) bool {
 	return true
 }
 func (a *App) CreateProject() error {
-	name, err := rpg.Generate()
+	name, err := Generate()
 	if err != nil {
 		fmt.Println(err)
 		return err
