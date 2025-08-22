@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	rpg "github.com/kevinburke/go-random-project-generator"
+	"github.com/hnucamendi/hyuga/rpg"
 )
 
 type Project struct {
