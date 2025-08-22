@@ -4,6 +4,7 @@ import {
   CreateProject,
   LoadProjects,
   DeleteProject,
+  UploadModels,
 } from "../../wailsjs/go/main/App.js";
 import {
   Button,
@@ -14,16 +15,26 @@ import {
   AppShell,
   Container,
   AppShellMain,
+  Stack,
   AppShellHeader,
   AppShellFooter,
   Box,
   Grid,
   GridCol,
+  Modal,
+  FileInput,
 } from "@mantine/core";
 import Header from "../components/Header";
 import type { main } from "../../wailsjs/go/models";
 import "../App.css";
-import { useMediaQuery } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
+import { IconFileImport, IconTrash } from "@tabler/icons-react";
+import { toBase64 } from "../utils/utils.js";
+
+type FormVals = {
+  machotes: File[] | null;
+};
 
 function Home() {
   const navigate = useNavigate();
@@ -31,6 +42,7 @@ function Home() {
   const hh = 100;
   const fh = 80;
   const isMdUp = useMediaQuery("(min-width: 62em)"); // ~992px (Mantine md)
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     const init = async () => {
@@ -43,6 +55,32 @@ function Home() {
     };
     init();
   }, [projects]);
+
+  const form = useForm<FormVals>({
+    mode: "controlled",
+    initialValues: {
+      machotes: null,
+    },
+    validate: {
+      machotes: (v) => (v ? null : "Sube imagen de el machote"),
+    },
+  });
+
+  const handleUpload = async (vals: typeof form.values) => {
+    if (!vals.machotes) return;
+
+    try {
+      const b64Arr: main.Model[] = [];
+      for (const img of vals.machotes) {
+        b64Arr.push({ label: img.name, value: await toBase64(img) });
+      }
+      await UploadModels(b64Arr);
+      form.reset();
+      close();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleCreateNewProject = async () => {
     try {
@@ -75,7 +113,7 @@ function Home() {
   return (
     <AppShell header={{ height: hh }} footer={{ height: fh }} padding={0}>
       <AppShellHeader>
-        <Header createProject={handleCreateNewProject} />
+        <Header createProject={handleCreateNewProject} openModal={open} />
       </AppShellHeader>
       <AppShellMain
         style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
@@ -126,6 +164,24 @@ function Home() {
               ))}
             </Grid>
           )}
+          <Modal opened={opened} onClose={close} title="Machotes">
+            <Stack>
+              <form onSubmit={form.onSubmit((v) => handleUpload(v))}>
+                <FileInput
+                  key={form.key("sheet")}
+                  required
+                  withAsterisk
+                  rightSection={<IconFileImport width={25} />}
+                  label="Añadir imagen de machote"
+                  placeholder="Imagen de machote"
+                  clearable={true}
+                  multiple={true}
+                  {...form.getInputProps("machotes")}
+                />
+                <Button type="submit">Submitir</Button>
+              </form>
+            </Stack>
+          </Modal>
         </Container>
       </AppShellMain>
       <AppShellFooter>

@@ -1,13 +1,29 @@
 import { useNavigate } from "react-router-dom";
-import { Button, Group, Box, Title, Container } from "@mantine/core";
-import { IconArrowBack, IconFilePlus } from "@tabler/icons-react";
+import {
+  Button,
+  Group,
+  Box,
+  Title,
+  Container,
+  ButtonGroup,
+} from "@mantine/core";
+import {
+  IconArrowBack,
+  IconFilePlus,
+  IconFileImport,
+} from "@tabler/icons-react";
 
 type HeaderProps = {
   createProject?: any;
+  openModal?: any;
   projectId?: string;
 };
 
-export default function Header({ createProject, projectId }: HeaderProps) {
+export default function Header({
+  createProject,
+  projectId,
+  openModal,
+}: HeaderProps) {
   const navigate = useNavigate();
 
   return (
@@ -40,14 +56,24 @@ export default function Header({ createProject, projectId }: HeaderProps) {
               Atrás
             </Button>
           ) : (
-            <Button
-              leftSection={<IconFilePlus size={16} />}
-              variant="filled"
-              size="sm"
-              onClick={createProject}
-            >
-              Crear Proyecto
-            </Button>
+            <Group>
+              <Button
+                leftSection={<IconFileImport size={16} />}
+                variant="filled"
+                size="sm"
+                onClick={openModal}
+              >
+                Agregar Machotes
+              </Button>
+              <Button
+                leftSection={<IconFilePlus size={16} />}
+                variant="filled"
+                size="sm"
+                onClick={createProject}
+              >
+                Crear Proyecto
+              </Button>
+            </Group>
           )}
         </Group>
       </Container>

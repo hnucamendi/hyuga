@@ -22,6 +22,10 @@ export function LoadAssets(arg1) {
   return window['go']['main']['App']['LoadAssets'](arg1);
 }
 
+export function LoadModels() {
+  return window['go']['main']['App']['LoadModels']();
+}
+
 export function LoadProject(arg1) {
   return window['go']['main']['App']['LoadProject'](arg1);
 }
@@ -32,4 +36,8 @@ export function LoadProjects() {
 
 export function UploadAsset(arg1, arg2) {
   return window['go']['main']['App']['UploadAsset'](arg1, arg2);
+}
+
+export function UploadModels(arg1) {
+  return window['go']['main']['App']['UploadModels'](arg1);
 }

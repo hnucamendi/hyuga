@@ -19,6 +19,11 @@ type Project struct {
 	Assets    []AssetMetadata `json:"assets"`
 }
 
+type Model struct {
+	Name  string `json:"label"`
+	Model string `json:"value"`
+}
+
 func cleanupDirs(d []os.DirEntry) []os.DirEntry {
 	var cd []os.DirEntry
 	for _, v := range d {
@@ -142,5 +147,59 @@ func (a *App) DeleteProject(id string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (a *App) UploadModels(mds []Model) error {
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return err
+	}
+
+	modelsDir := filepath.Join(base, "models")
+	if err := os.MkdirAll(modelsDir, 0755); err != nil {
+		return err
+	}
+
+	modelsFile := filepath.Join(modelsDir, "models.json")
+	modelsByte, err := os.ReadFile(modelsFile)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		v := []Model{{Name: "Seleciona Machote", Model: "empty"}}
+		b, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		tmp := modelsFile + ".tmp"
+		err = os.WriteFile(tmp, b, 0644)
+		if err != nil {
+			return err
+		}
+		err = os.Rename(tmp, modelsFile)
+		if err != nil {
+			return err
+		}
+		modelsByte = b
+	}
+
+	var existingModels []Model
+	err = json.Unmarshal(modelsByte, &existingModels)
+	if err != nil {
+		return err
+	}
+
+	existingModels = append(existingModels, mds...)
+	data, err := json.MarshalIndent(existingModels, "", " ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(modelsFile, data, 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

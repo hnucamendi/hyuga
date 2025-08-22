@@ -7,6 +7,7 @@ import {
   UploadAsset,
   DeleteAsset,
   GeneratePDF,
+  LoadModels,
 } from "../../wailsjs/go/main/App";
 import {
   Button,
@@ -25,21 +26,25 @@ import {
   SimpleGrid,
   Paper,
   Container,
+  NativeSelect,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconFileImport, IconTrash } from "@tabler/icons-react";
+import { IconFileImport, IconSelector, IconTrash } from "@tabler/icons-react";
 import { useForm, isNotEmpty } from "@mantine/form";
+import { toBase64 } from "../utils/utils.js";
 
 type FormVals = {
   sheet: File | null;
   cutout: File | null;
   pageNumber: string;
   section: string;
+  model: string;
 };
 
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
+  const [models, setModels] = useState<main.Model[]>([]);
   const [opened, { open, close }] = useDisclosure(false);
   const assetId = useRef("");
   const hh = 70;
@@ -53,6 +58,14 @@ function ProjectPage() {
     l();
   }, [projectId]);
 
+  useEffect(() => {
+    if (!projectId) return;
+    const l = async () => {
+      setModels(await LoadModels());
+    };
+    l();
+  }, []);
+
   const form = useForm<FormVals>({
     mode: "controlled",
     initialValues: {
@@ -60,6 +73,7 @@ function ProjectPage() {
       cutout: null,
       pageNumber: "",
       section: "",
+      model: "",
     },
     validate: {
       sheet: (v) => (v ? null : "Sube la foto de la hoja"),
@@ -67,6 +81,7 @@ function ProjectPage() {
       pageNumber: (v) =>
         /^\d+$/.test(v) ? null : "Usa solor numeros (1,2,3...)",
       section: isNotEmpty("Sección requerida"),
+      model: isNotEmpty("machote requerido"),
     },
   });
 
@@ -81,21 +96,13 @@ function ProjectPage() {
     setProject(await LoadProject(project.id));
   };
 
-  const toBase64 = (f: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.readAsDataURL(f);
-      r.onload = () => resolve(r.result as string);
-      r.onerror = (error) => reject(error);
-    });
-  };
-
   const handleUpload = async (vals: typeof form.values) => {
     if (
       !vals.sheet ||
       !vals.cutout ||
       vals.section === "" ||
       vals.pageNumber === "" ||
+      vals.model === "" ||
       assetId.current === "" ||
       !project?.id
     ) {
@@ -111,6 +118,7 @@ function ProjectPage() {
         cutout: cb64,
         pageNumber: vals.pageNumber,
         section: vals.section,
+        model: vals.model,
       });
 
       setProject(await LoadProject(project.id));
@@ -141,14 +149,13 @@ function ProjectPage() {
         >
           <Title order={2}>{project?.name}</Title>
           {project?.assets.map((as) => (
-            <Container size="lg" px={{ base: "md", sm: "lg" }}>
+            <Container key={as.id} size="lg" px={{ base: "md", sm: "lg" }}>
               <Paper
                 my="lg"
                 withBorder
                 shadow="sm"
                 radius="md"
                 p={{ base: "md", sm: "lg" }}
-                key={as.id}
               >
                 <Stack>
                   <Group gap="md" justify="space-between" wrap="wrap">
@@ -221,6 +228,16 @@ function ProjectPage() {
                 multiple={false}
                 {...form.getInputProps("cutout")}
               />
+              <NativeSelect
+                key={form.key("model")}
+                required
+                withAsterisk
+                rightSection={<IconSelector width={25} />}
+                label="Seleccionar machote"
+                data={models}
+                {...form.getInputProps("model")}
+              />
+
               <TextInput
                 key={form.key("pageNumber")}
                 required

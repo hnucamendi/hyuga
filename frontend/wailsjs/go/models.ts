@@ -6,6 +6,7 @@ export namespace main {
 	    cutout: string;
 	    pageNumber: string;
 	    section: string;
+	    model: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AssetMetadata(source);
@@ -18,6 +19,21 @@ export namespace main {
 	        this.cutout = source["cutout"];
 	        this.pageNumber = source["pageNumber"];
 	        this.section = source["section"];
+	        this.model = source["model"];
+	    }
+	}
+	export class Model {
+	    label: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Model(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.label = source["label"];
+	        this.value = source["value"];
 	    }
 	}
 	export class Project {

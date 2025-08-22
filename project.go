@@ -30,6 +30,7 @@ type AssetMetadata struct {
 	Cutout     string `json:"cutout"`
 	PageNumber string `json:"pageNumber"`
 	Section    string `json:"section"`
+	Model      string `json:"model"`
 }
 
 func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
@@ -290,4 +291,25 @@ func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
 	}
 
 	return nil
+}
+
+func (a *App) LoadModels() ([]Model, error) {
+	base, err := getBaseConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	modelsFile := filepath.Join(base, "models", "models.json")
+	modelsByte, err := os.ReadFile(modelsFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var models []Model
+	err = json.Unmarshal(modelsByte, &models)
+	if err != nil {
+		return nil, err
+	}
+
+	return models, nil
 }
