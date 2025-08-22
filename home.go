@@ -106,6 +106,7 @@ func ensureUnique(p Project, a AssetMetadata) bool {
 	}
 	return true
 }
+
 func (a *App) CreateProject() error {
 	name, err := Generate()
 	if err != nil {

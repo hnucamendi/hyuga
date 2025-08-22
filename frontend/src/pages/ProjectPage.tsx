@@ -198,6 +198,13 @@ function ProjectPage() {
                       </Button>
                     </Group>
                   </Group>
+                  <Image
+                    src={as.model}
+                    alt="Foto de hoja"
+                    radius="md"
+                    fit="contain"
+                    w="100%"
+                  />
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                     <Image
                       src={as.sheet}

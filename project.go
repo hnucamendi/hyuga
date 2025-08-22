@@ -245,17 +245,14 @@ func (a *App) GeneratePDF(projectId string) error {
 		modelReader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Model)))
 		sheetImg, _, err := image.Decode(sheetReader)
 		if err != nil {
-      fmt.Println("TAMOSHEET",err)
 			return err
 		}
 		cutoutImg, _, err := image.Decode(cutoutReader)
 		if err != nil {
-      fmt.Println("TAMOCUTOUT",err)
 			return err
 		}
 		modelImg, _, err := image.Decode(modelReader)
 		if err != nil {
-      fmt.Println("TAMOMODEL",err)
 			return err
 		}
 
