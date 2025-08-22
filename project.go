@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
+	"image/draw"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/signintech/gopdf"
@@ -143,6 +145,38 @@ func (a *App) DeleteAsset(projectId string, assetId string) error {
 	return nil
 }
 
+func toRGBA(src image.Image) *image.RGBA {
+	if dst, ok := src.(*image.RGBA); ok {
+		return dst // already 8-bit RGBA
+	}
+	b := src.Bounds()
+	dst := image.NewRGBA(b)
+	draw.Draw(dst, b, src, b.Min, draw.Src)
+	return dst
+}
+
+func fitWithinA4(imgWpx, imgHpx int) (x, y float64, r *gopdf.Rect) {
+	margin := 36.0 // 0.5 inch margins
+	maxW := gopdf.PageSizeA4.W - 2*margin
+	maxH := gopdf.PageSizeA4.H - 2*margin
+
+	iw := float64(imgWpx)
+	ih := float64(imgHpx)
+
+	// handle degenerate case
+	if iw <= 0 || ih <= 0 {
+		return margin, margin, &gopdf.Rect{W: maxW, H: maxH}
+	}
+
+	scale := math.Min(maxW/iw, maxH/ih)
+	drawW := iw * scale
+	drawH := ih * scale
+
+	x = (gopdf.PageSizeA4.W - drawW) / 2.0
+	y = (gopdf.PageSizeA4.H - drawH) / 2.0
+	return x, y, &gopdf.Rect{W: drawW, H: drawH}
+}
+
 func (a *App) GeneratePDF(projectId string) error {
 	if projectId == "" {
 		return fmt.Errorf("required project or asset ID not found")
@@ -164,33 +198,41 @@ func (a *App) GeneratePDF(projectId string) error {
 		return fmt.Errorf("invalid project JSON %w", err)
 	}
 
-	fmt.Println("TAMO")
-
 	pdf := &gopdf.GoPdf{}
 	pageSize := *gopdf.PageSizeA4
 	pdf.Start(gopdf.Config{PageSize: pageSize})
-	pdf.AddPage()
 
 	fontPath := filepath.Join("fonts", "times.ttf")
 	if err := pdf.AddTTFFont("times", fontPath); err != nil {
 		return fmt.Errorf("failed to load font: %w", err)
 	}
 
-	for _, asset := range proj.Assets {
+	for _, v := range proj.Assets {
 		pdf.AddPage()
-
-		// Write metadata
-		pdf.SetY(40)
-		pdf.Cell(nil, fmt.Sprintf("Section: %s", asset.Section))
-		pdf.Br(20)
-		pdf.Cell(nil, fmt.Sprintf("Page Number: %s", asset.PageNumber))
-		pdf.Br(20)
-
-		if asset.Cutout != "" {
-			if err := drawBase64Image(pdf, asset.Cutout, pageSize.W/2, pageSize.H/2); err != nil {
-				fmt.Printf("warning: failed to decode cutout: %v\n", err)
-			}
+		var dataURLRe = regexp.MustCompile(`^data:(?P<mime>[-\w.+/]+)?(?:;charset=[\w-]+)?;base64,`)
+		if m := dataURLRe.FindStringIndex(v.Cutout); m != nil {
+			v.Cutout = v.Cutout[m[1]:]
 		}
+		reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Cutout)))
+		img, format, err := image.Decode(reader)
+		if err != nil {
+			return err
+		}
+
+		rgba := toRGBA(img)
+		x, y, rect := fitWithinA4(rgba.Bounds().Dx(), rgba.Bounds().Dy())
+
+		fmt.Println("TAMO", format)
+
+		if err := pdf.ImageFrom(rgba, x, y, rect); err != nil {
+			return err
+		}
+
+		// if asset.Cutout != "" {
+		// 	if err := drawBase64Image(pdf, v.Cutout, pageSize.W/2, pageSize.H/2); err != nil {
+		// 		fmt.Printf("warning: failed to decode cutout: %v\n", err)
+		// 	}
+		// }
 	}
 
 	outputPath := filepath.Join(projectPath, "../", "output.pdf")
