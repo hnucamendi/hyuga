@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -107,7 +108,12 @@ func ensureUnique(p Project, a AssetMetadata) bool {
 	return true
 }
 func (a *App) CreateProject() error {
-	name := rpg.Generate()
+	name, err := rpg.Generate()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	id := uuid.NewString()
 	base, err := getBaseConfigPath()
 	if err != nil {

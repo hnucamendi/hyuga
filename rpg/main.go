@@ -1,17 +1,20 @@
 package rpg
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/kpechenenko/rword"
 )
 
 func Generate() (string, error) {
-	adjectives, err := rword.NewWithDict("./spanish_adjectives.txt")
+	adjPath := filepath.Join("spanish_adjectives.txt")
+	nounPath := filepath.Join("spanish_nouns.txt")
+	adjectives, err := rword.NewWithDict(adjPath)
 	if err != nil {
 		return "", err
 	}
-	nouns, err := rword.NewWithDict("./spanish_nouns.txt")
+	nouns, err := rword.NewWithDict(nounPath)
 	if err != nil {
 		return "", err
 	}
