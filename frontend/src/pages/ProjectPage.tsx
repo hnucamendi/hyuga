@@ -27,6 +27,7 @@ import {
   Paper,
   Container,
   NativeSelect,
+  LoadingOverlay,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFileImport, IconSelector, IconTrash } from "@tabler/icons-react";
@@ -45,6 +46,7 @@ function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
   const [models, setModels] = useState<main.Model[]>([]);
+  const [generatingPDF, setGeneratingPDF] = useState<boolean>(false);
   const [opened, { open, close }] = useDisclosure(false);
   const assetId = useRef("");
   const hh = 70;
@@ -131,7 +133,14 @@ function ProjectPage() {
 
   const handleProcessPDF = async () => {
     if (!project) return;
-    await GeneratePDF(project.id);
+    try {
+      setGeneratingPDF(true);
+      await GeneratePDF(project.id);
+      setGeneratingPDF(false);
+    } catch (error) {
+      setGeneratingPDF(false);
+      console.error(error);
+    }
   };
 
   return (
@@ -151,6 +160,7 @@ function ProjectPage() {
         <AppShellMain
           style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
         >
+          <LoadingOverlay visible={generatingPDF} />
           <Title order={2}>{project?.name}</Title>
           {project?.assets.map((as) => (
             <Container key={as.id} size="lg" px={{ base: "md", sm: "lg" }}>

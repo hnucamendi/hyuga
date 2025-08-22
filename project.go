@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
 	"image/draw"
-	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -31,6 +29,10 @@ type AssetMetadata struct {
 	PageNumber string `json:"pageNumber"`
 	Section    string `json:"section"`
 	Model      string `json:"model"`
+}
+
+type Region struct {
+	X, Y, W, H float64
 }
 
 func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
@@ -156,6 +158,24 @@ func toRGBA(src image.Image) *image.RGBA {
 	return dst
 }
 
+func fitWithinRegion(imgWpx, imgHpx int, region Region, padding float64) (x, y float64, r *gopdf.Rect) {
+	iw := float64(imgWpx)
+	ih := float64(imgHpx)
+	if iw <= 0 || ih <= 0 {
+		// Fallback: fill region minus padding (unlikely but safe)
+		return region.X + padding, region.Y + padding,
+			&gopdf.Rect{W: region.W - 2*padding, H: region.H - 2*padding}
+	}
+	availW := region.W - 2*padding
+	availH := region.H - 2*padding
+	scale := math.Min(availW/iw, availH/ih)
+	drawW := iw * scale
+	drawH := ih * scale
+	x = region.X + (region.W-drawW)/2.0
+	y = region.Y + (region.H-drawH)/2.0
+	return x, y, &gopdf.Rect{W: drawW, H: drawH}
+}
+
 func fitWithinA4(imgWpx, imgHpx int) (x, y float64, r *gopdf.Rect) {
 	margin := 36.0 // 0.5 inch margins
 	maxW := gopdf.PageSizeA4.W - 2*margin
@@ -211,83 +231,78 @@ func (a *App) GeneratePDF(projectId string) error {
 	for _, v := range proj.Assets {
 		pdf.AddPage()
 		var dataURLRe = regexp.MustCompile(`^data:(?P<mime>[-\w.+/]+)?(?:;charset=[\w-]+)?;base64,`)
+		if m := dataURLRe.FindStringIndex(v.Sheet); m != nil {
+			v.Sheet = v.Sheet[m[1]:]
+		}
 		if m := dataURLRe.FindStringIndex(v.Cutout); m != nil {
 			v.Cutout = v.Cutout[m[1]:]
 		}
-		reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Cutout)))
-		img, format, err := image.Decode(reader)
+		if m := dataURLRe.FindStringIndex(v.Model); m != nil {
+			v.Model = v.Model[m[1]:]
+		}
+		sheetReader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Sheet)))
+		cutoutReader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Cutout)))
+		modelReader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(strings.TrimSpace(v.Model)))
+		sheetImg, _, err := image.Decode(sheetReader)
 		if err != nil {
+      fmt.Println("TAMOSHEET",err)
+			return err
+		}
+		cutoutImg, _, err := image.Decode(cutoutReader)
+		if err != nil {
+      fmt.Println("TAMOCUTOUT",err)
+			return err
+		}
+		modelImg, _, err := image.Decode(modelReader)
+		if err != nil {
+      fmt.Println("TAMOMODEL",err)
 			return err
 		}
 
-		rgba := toRGBA(img)
-		x, y, rect := fitWithinA4(rgba.Bounds().Dx(), rgba.Bounds().Dy())
-
-		fmt.Println("TAMO", format)
-
-		if err := pdf.ImageFrom(rgba, x, y, rect); err != nil {
+		sheetRgba := toRGBA(sheetImg)
+		cutoutRgba := toRGBA(cutoutImg)
+		modelRgba := toRGBA(modelImg)
+		sx, sy, srect := fitWithinA4(sheetRgba.Bounds().Dx(), sheetRgba.Bounds().Dy())
+		if err := pdf.ImageFrom(sheetRgba, sx, sy, srect); err != nil {
+			return err
+		}
+		pdf.AddPage()
+		const margin = 36.0
+		const gap = 12.0
+		pageW := gopdf.PageSizeA4.W
+		pageH := gopdf.PageSizeA4.H
+		contentW := pageW - 2*margin
+		contentH := pageH - 2*margin
+		topH := contentH * 0.40
+		midY := margin + topH + gap
+		midH := contentH - topH - gap
+		topRegion := Region{
+			X: margin,
+			Y: margin,
+			W: contentW,
+			H: topH,
+		}
+		midRegion := Region{
+			X: margin,
+			Y: midY,
+			W: contentW,
+			H: midH,
+		}
+		const innerPad = 4.0
+		mx, my, mrect := fitWithinRegion(modelRgba.Bounds().Dx(), modelRgba.Bounds().Dy(), topRegion, innerPad)
+		if err := pdf.ImageFrom(modelRgba, mx, my, mrect); err != nil {
 			return err
 		}
 
-		// if asset.Cutout != "" {
-		// 	if err := drawBase64Image(pdf, v.Cutout, pageSize.W/2, pageSize.H/2); err != nil {
-		// 		fmt.Printf("warning: failed to decode cutout: %v\n", err)
-		// 	}
-		// }
+		cx, cy, crect := fitWithinRegion(cutoutRgba.Bounds().Dx(), cutoutRgba.Bounds().Dy(), midRegion, innerPad)
+		if err := pdf.ImageFrom(cutoutRgba, cx, cy, crect); err != nil {
+			return err
+		}
 	}
 
 	outputPath := filepath.Join(projectPath, "../", "output.pdf")
 	if err := pdf.WritePdf(outputPath); err != nil {
 		return fmt.Errorf("failed to write PDF: %w", err)
-	}
-
-	return nil
-}
-
-// drawBase64Image decodes a base64 string and draws it at the specified x,y
-func drawBase64Image(pdf *gopdf.GoPdf, base64Str string, x, y float64) error {
-	// Strip data URI prefix if present
-	if idx := strings.Index(base64Str, "base64,"); idx != -1 {
-		base64Str = base64Str[idx+7:]
-	}
-
-	imgBytes, err := base64.StdEncoding.DecodeString(base64Str)
-	if err != nil {
-		return fmt.Errorf("base64 decode error: %w", err)
-	}
-
-	imgReader := bytes.NewReader(imgBytes)
-	img, _, err := image.Decode(imgReader)
-	if err != nil {
-		return fmt.Errorf("image decode error: %w", err)
-	}
-
-	bounds := img.Bounds()
-	imgW := float64(bounds.Dx())
-	imgH := float64(bounds.Dy())
-
-	margin := 40.0
-	maxW := x * margin
-	maxH := y * margin
-
-	scaleW := maxW / imgW
-	scaleH := maxH / imgH
-	scale := math.Min(scaleW, scaleH)
-
-	scaledW := imgW * scale
-	scaledH := imgH * scale
-
-	y = (y - scaledH) / 2
-	x = (x - scaledW) / 2
-
-	if _, err := imgReader.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("failed to reset image reader: %w", err)
-	}
-
-	rect := &gopdf.Rect{W: scaledW, H: scaledH}
-
-	if err := pdf.ImageFrom(img, x, y, rect); err != nil {
-		return fmt.Errorf("error embedding image in PDF: %w", err)
 	}
 
 	return nil
