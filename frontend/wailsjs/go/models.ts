@@ -6,7 +6,6 @@ export namespace main {
 	    cutout: string;
 	    pageNumber: string;
 	    section: string;
-	    date: string;
 	    model: string;
 	
 	    static createFrom(source: any = {}) {
@@ -20,7 +19,6 @@ export namespace main {
 	        this.cutout = source["cutout"];
 	        this.pageNumber = source["pageNumber"];
 	        this.section = source["section"];
-	        this.date = source["date"];
 	        this.model = source["model"];
 	    }
 	}
