@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
@@ -13,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/signintech/gopdf"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type PhotoType string
@@ -198,6 +201,28 @@ func fitWithinA4(imgWpx, imgHpx int) (x, y float64, r *gopdf.Rect) {
 	return x, y, &gopdf.Rect{W: drawW, H: drawH}
 }
 
+func configSavePath(ctx context.Context, proj Project) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(homeDir, "Downloads")
+	dialogOpts := runtime.SaveDialogOptions{
+		DefaultDirectory:           dir,
+		DefaultFilename:            concat(proj.Name, ".pdf"),
+		Title:                      "Choose location to save PDF",
+		ShowHiddenFiles:            false,
+		CanCreateDirectories:       false,
+		TreatPackagesAsDirectories: false,
+	}
+
+	path, err := runtime.SaveFileDialog(ctx, dialogOpts)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func (a *App) GeneratePDF(projectId string) error {
 	if projectId == "" {
 		return fmt.Errorf("required project or asset ID not found")
@@ -217,6 +242,14 @@ func (a *App) GeneratePDF(projectId string) error {
 	var proj Project
 	if err := json.Unmarshal(b, &proj); err != nil {
 		return fmt.Errorf("invalid project JSON %w", err)
+	}
+
+	path, err := configSavePath(a.ctx, proj)
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return errors.New("no file path provided")
 	}
 
 	pdf := &gopdf.GoPdf{}
@@ -297,8 +330,7 @@ func (a *App) GeneratePDF(projectId string) error {
 		}
 	}
 
-	outputPath := filepath.Join(projectPath, "../", "output.pdf")
-	if err := pdf.WritePdf(outputPath); err != nil {
+	if err := pdf.WritePdf(path); err != nil {
 		return fmt.Errorf("failed to write PDF: %w", err)
 	}
 
