@@ -38,6 +38,6 @@ export function UploadAsset(arg1, arg2) {
   return window['go']['main']['App']['UploadAsset'](arg1, arg2);
 }
 
-export function UploadModels(arg1) {
-  return window['go']['main']['App']['UploadModels'](arg1);
+export function UploadModels() {
+  return window['go']['main']['App']['UploadModels']();
 }

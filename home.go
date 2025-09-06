@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Project struct {
@@ -20,8 +23,8 @@ type Project struct {
 }
 
 type Model struct {
-	Name  string `json:"label"`
-	Model string `json:"value"`
+	Label string `json:"label"`
+	Value string `json:"value"`
 }
 
 func cleanupDirs(d []os.DirEntry) []os.DirEntry {
@@ -156,24 +159,58 @@ func (a *App) DeleteProject(id string) error {
 	return nil
 }
 
-func (a *App) UploadModels(mds []Model) error {
-	base, err := getBaseConfigPath()
+func hashFromSavedPath(p string) (string, bool) {
+	base := filepath.Base(p)
+	noExt := strings.TrimSuffix(base, filepath.Ext(base))
+	// support both "<sha>" and "<sha>-anything"
+	if i := strings.IndexByte(noExt, '-'); i > 0 {
+		noExt = noExt[:i]
+	}
+	if len(noExt) != 64 {
+		return "", false
+	}
+	if _, err := hex.DecodeString(noExt); err != nil {
+		return "", false
+	}
+	return noExt, true
+}
+
+func (a *App) UploadModels() error {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	modelsDir := filepath.Join(base, "models")
-	if err := os.MkdirAll(modelsDir, 0755); err != nil {
+	baseDir, err := getBaseConfigPath()
+	if err != nil {
 		return err
 	}
 
-	modelsFile := filepath.Join(modelsDir, "models.json")
-	modelsByte, err := os.ReadFile(modelsFile)
+	imagesDir := filepath.Join(baseDir, "models", "images")
+	if err := os.MkdirAll(imagesDir, 0755); err != nil {
+		return err
+	}
+
+	cfg := runtime.OpenDialogOptions{
+		DefaultDirectory:           homeDir,
+		ShowHiddenFiles:            false,
+		CanCreateDirectories:       false,
+		TreatPackagesAsDirectories: false,
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Images (*.jpg;*.png)",
+				Pattern:     "*.png;*.jpg",
+			},
+		},
+	}
+
+	modelsFile := filepath.Join(baseDir, "models", "models.json")
+	mfb, err := os.ReadFile(modelsFile)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
-		v := []Model{{Name: "Seleciona Machote", Model: "empty"}}
+		v := []Model{{Label: "Seleciona Machote", Value: "empty"}}
 		b, err := json.Marshal(v)
 		if err != nil {
 			return err
@@ -187,16 +224,64 @@ func (a *App) UploadModels(mds []Model) error {
 		if err != nil {
 			return err
 		}
-		modelsByte = b
+		mfb = b
 	}
 
 	var existingModels []Model
-	err = json.Unmarshal(modelsByte, &existingModels)
+	err = json.Unmarshal(mfb, &existingModels)
 	if err != nil {
 		return err
 	}
 
-	existingModels = append(existingModels, mds...)
+	seenHash := make(map[string]struct{}, len(existingModels))
+	seenPath := make(map[string]struct{}, len(existingModels))
+	for _, m := range existingModels {
+		if h, ok := hashFromSavedPath(m.Value); ok {
+			seenHash[h] = struct{}{}
+		}
+		seenPath[m.Value] = struct{}{}
+
+	}
+
+	models, err := runtime.OpenMultipleFilesDialog(a.ctx, cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range models {
+		fn := filepath.Base(m)
+		b, err := os.ReadFile(m)
+		if err != nil {
+			fmt.Println(concat("could not read file: ", m))
+			continue
+		}
+		sum := sha256.Sum256(b)
+		h := hex.EncodeToString(sum[:])
+		ext := strings.ToLower(filepath.Ext(fn))
+		outName := h + ext
+		outPath := filepath.Join(imagesDir, outName)
+
+		if _, dup := seenHash[h]; dup {
+			if _, alreadyListed := seenPath[outPath]; alreadyListed {
+				continue
+			}
+			existingModels = append(existingModels, Model{Label: fn, Value: outPath})
+			seenPath[outPath] = struct{}{}
+			continue
+		}
+
+		if _, err := os.Stat(outPath); errors.Is(err, os.ErrNotExist) {
+			if err := os.WriteFile(outPath, b, 0644); err != nil {
+				fmt.Println(concat("could not write file ", outPath, " err ", err.Error()))
+				continue
+			}
+		}
+
+		existingModels = append(existingModels, Model{Label: fn, Value: outPath})
+		seenHash[h] = struct{}{}
+		seenPath[outPath] = struct{}{}
+	}
+
 	data, err := json.MarshalIndent(existingModels, "", " ")
 	if err != nil {
 		return err

@@ -66,15 +66,9 @@ function Home() {
     },
   });
 
-  const handleUpload = async (vals: typeof form.values) => {
-    if (!vals.machotes) return;
-
+  const handleUpload = async () => {
     try {
-      const b64Arr: main.Model[] = [];
-      for (const img of vals.machotes) {
-        b64Arr.push({ label: img.name, value: await toBase64(img) });
-      }
-      await UploadModels(b64Arr);
+      await UploadModels();
       form.reset();
       close();
     } catch (error) {
@@ -113,7 +107,10 @@ function Home() {
   return (
     <AppShell header={{ height: hh }} footer={{ height: fh }} padding={0}>
       <AppShellHeader>
-        <Header createProject={handleCreateNewProject} openModal={open} />
+        <Header
+          createProject={handleCreateNewProject}
+          handleUpload={handleUpload}
+        />
       </AppShellHeader>
       <AppShellMain
         style={{ background: "var(--mantine-color-body)", overflowX: "clip" }}
@@ -164,24 +161,24 @@ function Home() {
               ))}
             </Grid>
           )}
-          <Modal opened={opened} onClose={close} title="Machotes">
-            <Stack>
-              <form onSubmit={form.onSubmit((v) => handleUpload(v))}>
-                <FileInput
-                  key={form.key("sheet")}
-                  required
-                  withAsterisk
-                  rightSection={<IconFileImport width={25} />}
-                  label="Añadir imagen de machote"
-                  placeholder="Imagen de machote"
-                  clearable={true}
-                  multiple={true}
-                  {...form.getInputProps("machotes")}
-                />
-                <Button type="submit">Submitir</Button>
-              </form>
-            </Stack>
-          </Modal>
+          {/* <Modal opened={opened} onClose={close} title="Machotes"> */}
+          {/*   <Stack> */}
+          {/*     <form onSubmit={form.onSubmit((v) => handleUpload(v))}> */}
+          {/*       <FileInput */}
+          {/*         key={form.key("sheet")} */}
+          {/*         required */}
+          {/*         withAsterisk */}
+          {/*         rightSection={<IconFileImport width={25} />} */}
+          {/*         label="Añadir imagen de machote" */}
+          {/*         placeholder="Imagen de machote" */}
+          {/*         clearable={true} */}
+          {/*         multiple={true} */}
+          {/*         {...form.getInputProps("machotes")} */}
+          {/*       /> */}
+          {/*       <Button type="submit">Submitir</Button> */}
+          {/*     </form> */}
+          {/*   </Stack> */}
+          {/* </Modal> */}
         </Container>
       </AppShellMain>
       <AppShellFooter>

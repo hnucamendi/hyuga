@@ -19,6 +19,7 @@ type HeaderProps = {
   createProject?: any;
   openModal?: any;
   projectId?: string;
+  handleUpload: any;
   handleAddAsset?: any;
   handleProcessPDF?: any;
 };
@@ -27,6 +28,7 @@ export default function Header({
   createProject,
   projectId,
   openModal,
+  handleUpload,
   handleAddAsset,
   handleProcessPDF,
 }: HeaderProps) {
@@ -75,7 +77,7 @@ export default function Header({
                 leftSection={<IconFileImport size={16} />}
                 variant="filled"
                 size="sm"
-                onClick={openModal}
+                onClick={handleUpload}
               >
                 Agregar Machotes
               </Button>
