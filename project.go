@@ -15,7 +15,9 @@ import (
 	"strings"
 
 	"github.com/signintech/gopdf"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v2/pkg/menu"
+	"github.com/wailsapp/wails/v2/pkg/menu/keys"
+	rt "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type PhotoType string
@@ -207,7 +209,7 @@ func configSavePath(ctx context.Context, proj Project) (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(homeDir, "Downloads")
-	dialogOpts := runtime.SaveDialogOptions{
+	dialogOpts := rt.SaveDialogOptions{
 		DefaultDirectory:           dir,
 		DefaultFilename:            concat(proj.Name, ".pdf"),
 		Title:                      "Choose location to save PDF",
@@ -216,7 +218,7 @@ func configSavePath(ctx context.Context, proj Project) (string, error) {
 		TreatPackagesAsDirectories: false,
 	}
 
-	path, err := runtime.SaveFileDialog(ctx, dialogOpts)
+	path, err := rt.SaveFileDialog(ctx, dialogOpts)
 	if err != nil {
 		return "", err
 	}
@@ -356,4 +358,61 @@ func (a *App) LoadModels() ([]Model, error) {
 	}
 
 	return models, nil
+}
+
+func (a *App) Menu() error {
+	fmt.Println("TAMO clicked")
+	menu := menu.Menu{
+		Items: []*menu.MenuItem{
+			{
+				Label:       "test",
+				Accelerator: keys.CmdOrCtrl("n"),
+				Type:        menu.SubmenuType,
+				Disabled:    false,
+				Hidden:      false,
+				Click: func(cd *menu.CallbackData) {
+					fmt.Println("TAMO clicked")
+					fmt.Printf("%+v\n", cd)
+				},
+				// // SubMenu contains a list of menu items that will be shown as a submenu
+				// // SubMenu []*MenuItem `json:"SubMenu,omitempty"`
+				// SubMenu *Menu
+				//
+				// // Callback function when menu clicked
+				// Click Callback
+				// /*
+				// 	// Text Colour
+				// 	RGBA string
+				//
+				// 	// Font
+				// 	FontSize int
+				// 	FontName string
+				//
+				// 	// Image - base64 image data
+				// 	Image string
+				//
+				// 	// MacTemplateImage indicates that on a Mac, this image is a template image
+				// 	MacTemplateImage bool
+				//
+				// 	// MacAlternate indicates that this item is an alternative to the previous menu item
+				// 	MacAlternate bool
+				//
+				// 	// Tooltip
+				// 	Tooltip string
+				// */
+				// // This holds the menu item's parent.
+				// parent *MenuItem
+				//
+				// // Used for locking when removing elements
+				// removeLock sync.Mutex
+			},
+		},
+	}
+
+	rt.MenuSetApplicationMenu(a.ctx, &menu)
+
+	// if runtime.GOOS == "darwin" {
+	// 	AppMenu.Append(menu.AppMenu()) // On macOS platform, this must be done right after `NewMenu()`
+	// }
+	return nil
 }

@@ -8,6 +8,7 @@ import {
   DeleteAsset,
   GeneratePDF,
   LoadModels,
+  Menu,
 } from "../../wailsjs/go/main/App";
 import {
   Button,
@@ -143,6 +144,10 @@ function ProjectPage() {
     }
   };
 
+  const handleOpenMenu = async () => {
+    await Menu()
+  }
+
   return (
     <AppShell footer={{ height: fh }} header={{ height: hh }} padding={0}>
       <AppShellHeader>
@@ -150,6 +155,7 @@ function ProjectPage() {
           projectId={projectId}
           handleAddAsset={handleAddAsset}
           handleProcessPDF={handleProcessPDF}
+          handleOpenMenu={handleOpenMenu}
         />
       </AppShellHeader>
       {!projectId ? (

@@ -5,9 +5,6 @@ import {
   Box,
   Title,
   Container,
-  ButtonGroup,
-  Loader,
-  LoadingOverlay,
 } from "@mantine/core";
 import {
   IconArrowBack,
@@ -19,7 +16,8 @@ type HeaderProps = {
   createProject?: any;
   openModal?: any;
   projectId?: string;
-  handleUpload: any;
+  handleUpload?: any;
+  handleOpenMenu?: any;
   handleAddAsset?: any;
   handleProcessPDF?: any;
 };
@@ -27,9 +25,8 @@ type HeaderProps = {
 export default function Header({
   createProject,
   projectId,
-  openModal,
   handleUpload,
-  handleAddAsset,
+  handleOpenMenu,
   handleProcessPDF,
 }: HeaderProps) {
   const navigate = useNavigate();
@@ -59,7 +56,7 @@ export default function Header({
               <Button color="green" size="sm" onClick={handleProcessPDF}>
                 Finalizar PDF
               </Button>
-              <Button variant="filled" size="sm" onClick={handleAddAsset}>
+              <Button variant="filled" size="sm" onClick={handleOpenMenu}>
                 Agregar activo
               </Button>
               <Button

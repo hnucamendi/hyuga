@@ -15,22 +15,17 @@ import {
   AppShell,
   Container,
   AppShellMain,
-  Stack,
   AppShellHeader,
   AppShellFooter,
   Box,
   Grid,
   GridCol,
-  Modal,
-  FileInput,
 } from "@mantine/core";
 import Header from "../components/Header";
 import type { main } from "../../wailsjs/go/models";
 import "../App.css";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { IconFileImport, IconTrash } from "@tabler/icons-react";
-import { toBase64 } from "../utils/utils.js";
 
 type FormVals = {
   machotes: File[] | null;
@@ -42,7 +37,6 @@ function Home() {
   const hh = 100;
   const fh = 80;
   const isMdUp = useMediaQuery("(min-width: 62em)"); // ~992px (Mantine md)
-  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     const init = async () => {
@@ -70,7 +64,6 @@ function Home() {
     try {
       await UploadModels();
       form.reset();
-      close();
     } catch (error) {
       console.error(error);
     }
@@ -161,24 +154,6 @@ function Home() {
               ))}
             </Grid>
           )}
-          {/* <Modal opened={opened} onClose={close} title="Machotes"> */}
-          {/*   <Stack> */}
-          {/*     <form onSubmit={form.onSubmit((v) => handleUpload(v))}> */}
-          {/*       <FileInput */}
-          {/*         key={form.key("sheet")} */}
-          {/*         required */}
-          {/*         withAsterisk */}
-          {/*         rightSection={<IconFileImport width={25} />} */}
-          {/*         label="Añadir imagen de machote" */}
-          {/*         placeholder="Imagen de machote" */}
-          {/*         clearable={true} */}
-          {/*         multiple={true} */}
-          {/*         {...form.getInputProps("machotes")} */}
-          {/*       /> */}
-          {/*       <Button type="submit">Submitir</Button> */}
-          {/*     </form> */}
-          {/*   </Stack> */}
-          {/* </Modal> */}
         </Container>
       </AppShellMain>
       <AppShellFooter>
