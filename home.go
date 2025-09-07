@@ -175,6 +175,13 @@ func hashFromSavedPath(p string) (string, bool) {
 	return noExt, true
 }
 
+func hash(fn string, b []byte) (string, string) {
+	sum := sha256.Sum256(b)
+	h := hex.EncodeToString(sum[:])
+	ext := strings.ToLower(filepath.Ext(fn))
+	return h + ext, h
+}
+
 func (a *App) UploadModels() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -255,10 +262,8 @@ func (a *App) UploadModels() error {
 			fmt.Println(concat("could not read file: ", m))
 			continue
 		}
-		sum := sha256.Sum256(b)
-		h := hex.EncodeToString(sum[:])
-		ext := strings.ToLower(filepath.Ext(fn))
-		outName := h + ext
+
+		outName, h := hash(fn, b)
 		outPath := filepath.Join(imagesDir, outName)
 
 		if _, dup := seenHash[h]; dup {

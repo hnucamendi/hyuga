@@ -49,7 +49,8 @@ func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
 		return err
 	}
 
-	projectPath := filepath.Join(base, "projects", concat("project-", projectId), "project.json")
+	projectDir := filepath.Join(base, "projects", concat("project-", projectId))
+	projectPath := filepath.Join(projectDir, "project.json")
 	b, err := os.ReadFile(projectPath)
 	if err != nil {
 		return fmt.Errorf("failed to read project.json: %w", err)
@@ -66,6 +67,37 @@ func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
 		return nil
 	}
 
+	bSheet, err := os.ReadFile(as.Sheet)
+	if err != nil {
+		return err
+	}
+	bCutout, err := os.ReadFile(as.Cutout)
+	if err != nil {
+		return err
+	}
+
+	imagesDir := filepath.Join(projectDir, "images")
+	if err := os.MkdirAll(imagesDir, 0755); err != nil {
+		return err
+	}
+
+	sOutName, _ := hash(as.Sheet, bSheet)
+	cOutName, _ := hash(as.Cutout, bCutout)
+
+	sOutPath := filepath.Join(imagesDir, sOutName)
+	cOutPath := filepath.Join(imagesDir, cOutName)
+
+	if err := os.WriteFile(sOutPath, bSheet, 0644); err != nil {
+		fmt.Println(concat("could not write file ", sOutPath, " err ", err.Error()))
+	}
+
+	if err := os.WriteFile(cOutPath, bCutout, 0644); err != nil {
+		fmt.Println(concat("could not write file ", cOutPath, " err ", err.Error()))
+	}
+
+	as.Sheet = sOutPath
+	as.Cutout = cOutPath
+
 	proj.Assets = append(proj.Assets, as)
 
 	data, err := json.MarshalIndent(proj, "", "  ")
@@ -73,6 +105,7 @@ func (a *App) UploadAsset(projectId string, as AssetMetadata) error {
 		return err
 	}
 
+	fmt.Println("TAMO", projectPath, projectDir)
 	err = os.WriteFile(projectPath, data, 0644)
 	if err != nil {
 		return err

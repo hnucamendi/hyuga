@@ -20,7 +20,6 @@ import {
   AppShellHeader,
   AppShellMain,
   AppShellFooter,
-  FileInput,
   Modal,
   TextInput,
   Stack,
@@ -29,12 +28,11 @@ import {
   Container,
   NativeSelect,
   LoadingOverlay,
+  MenuLabel,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFileImport, IconSelector, IconTrash } from "@tabler/icons-react";
 import { useForm, isNotEmpty } from "@mantine/form";
-import { toBase64 } from "../utils/utils.js";
-import { Label } from "@mui/icons-material";
 
 type FormVals = {
   pageNumber: string;
@@ -97,27 +95,31 @@ function ProjectPage() {
   };
 
   const handleUploadImage = async (e: React.MouseEvent<HTMLElement>) => {
-    e.preventDefault()
-    const ct = e.currentTarget.id
+    e.preventDefault();
+    const ct = e.currentTarget.id;
     try {
       switch (ct) {
         case "sheet":
-          setSheet(await PickImageAndReturnPath())
-          break
+          setSheet(await PickImageAndReturnPath());
+          break;
         case "cutout":
-          setCutout(await PickImageAndReturnPath())
-          break
+          setCutout(await PickImageAndReturnPath());
+          break;
         default:
-          console.error("no valid id")
-          break
+          console.error("no valid id");
+          break;
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
+
+  const toFileURL = (p: string) => "file://" + encodeURI(p); // encodes spaces to %20
 
   const handleUpload = async (vals: typeof form.values) => {
     if (
+      sheet === "" ||
+      cutout === "" ||
       vals.section === "" ||
       vals.pageNumber === "" ||
       vals.model === "" ||
@@ -138,8 +140,8 @@ function ProjectPage() {
       });
 
       setProject(await LoadProject(project.id));
-      setSheet("")
-      setCutout("")
+      setSheet("");
+      setCutout("");
       form.reset();
       close();
     } catch (error) {
@@ -215,22 +217,22 @@ function ProjectPage() {
                     </Group>
                   </Group>
                   <Image
-                    src={as.model}
-                    alt="Foto de hoja"
+                    src={toFileURL(as.model)}
+                    alt="Foto de machote"
                     radius="md"
                     fit="contain"
                     w="100%"
                   />
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                     <Image
-                      src={as.sheet}
+                      src={toFileURL(as.sheet)}
                       alt="Foto de hoja"
                       radius="md"
                       fit="contain"
                       w="100%"
                     />
                     <Image
-                      src={as.cutout}
+                      src={toFileURL(as.cutout)}
                       alt="Foto de nota"
                       radius="md"
                       fit="contain"
@@ -244,37 +246,27 @@ function ProjectPage() {
           <Modal p="2em" opened={opened} onClose={close} title="Activo">
             <form onSubmit={form.onSubmit((v) => handleUpload(v))}>
               <Stack>
-                <Label>{sheet}</Label>
-                <Button id="sheet" onClick={handleUploadImage}>
+                <Text>{sheet}</Text>
+                <Button
+                  id="sheet"
+                  onClick={handleUploadImage}
+                  rightSection={<IconFileImport width={25} />}
+                  variant="outline"
+                  color="black"
+                >
                   Añadir foto de hoja
                 </Button>
-                <Label>{cutout}</Label>
-                <Button id="sheet" onClick={handleUploadImage}>
+                <Text>{cutout}</Text>
+                <Button
+                  id="cutout"
+                  onClick={handleUploadImage}
+                  rightSection={<IconFileImport width={25} />}
+                  variant="outline"
+                  color="black"
+                >
                   Añadir foto de nota
                 </Button>
               </Stack>
-              {/* <FileInput */}
-              {/*   key={form.key("sheet")} */}
-              {/*   required */}
-              {/*   withAsterisk */}
-              {/*   rightSection={<IconFileImport width={25} />} */}
-              {/*   label="Añadir foto de hoja" */}
-              {/*   placeholder="Imagen de la hoja" */}
-              {/*   clearable={true} */}
-              {/*   multiple={false} */}
-              {/*   {...form.getInputProps("sheet")} */}
-              {/* /> */}
-              {/* <FileInput */}
-              {/*   key={form.key("cutout")} */}
-              {/*   required */}
-              {/*   withAsterisk */}
-              {/*   rightSection={<IconFileImport width={25} />} */}
-              {/*   label="Añadir foto de nota" */}
-              {/*   placeholder="Imagen de la nota" */}
-              {/*   clearable={true} */}
-              {/*   multiple={false} */}
-              {/*   {...form.getInputProps("cutout")} */}
-              {/* /> */}
               <NativeSelect
                 key={form.key("model")}
                 required
