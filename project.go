@@ -16,6 +16,7 @@ import (
 
 	"github.com/signintech/gopdf"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	rt "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type PhotoType string
@@ -207,7 +208,7 @@ func configSavePath(ctx context.Context, proj Project) (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(homeDir, "Downloads")
-	dialogOpts := runtime.SaveDialogOptions{
+	dialogOpts := rt.SaveDialogOptions{
 		DefaultDirectory:           dir,
 		DefaultFilename:            concat(proj.Name, ".pdf"),
 		Title:                      "Choose location to save PDF",
@@ -216,7 +217,7 @@ func configSavePath(ctx context.Context, proj Project) (string, error) {
 		TreatPackagesAsDirectories: false,
 	}
 
-	path, err := runtime.SaveFileDialog(ctx, dialogOpts)
+	path, err := rt.SaveFileDialog(ctx, dialogOpts)
 	if err != nil {
 		return "", err
 	}
@@ -356,4 +357,31 @@ func (a *App) LoadModels() ([]Model, error) {
 	}
 
 	return models, nil
+}
+
+func (a *App) PickImageAndReturnPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	cfg := runtime.OpenDialogOptions{
+		DefaultDirectory:           homeDir,
+		ShowHiddenFiles:            false,
+		CanCreateDirectories:       false,
+		TreatPackagesAsDirectories: false,
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Images (*.jpg;*.png)",
+				Pattern:     "*.png;*.jpg",
+			},
+		},
+	}
+
+	fp, err := rt.OpenFileDialog(a.ctx, cfg)
+	if err != nil {
+		return "", err
+	}
+
+	return fp, nil
 }

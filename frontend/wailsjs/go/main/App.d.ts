@@ -18,6 +18,8 @@ export function LoadProject(arg1:string):Promise<main.Project>;
 
 export function LoadProjects():Promise<Array<main.Project>>;
 
+export function PickImageAndReturnPath():Promise<string>;
+
 export function UploadAsset(arg1:string,arg2:main.AssetMetadata):Promise<void>;
 
 export function UploadModels():Promise<void>;

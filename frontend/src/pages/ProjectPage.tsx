@@ -8,6 +8,7 @@ import {
   DeleteAsset,
   GeneratePDF,
   LoadModels,
+  PickImageAndReturnPath,
 } from "../../wailsjs/go/main/App";
 import {
   Button,
@@ -33,10 +34,9 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconFileImport, IconSelector, IconTrash } from "@tabler/icons-react";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { toBase64 } from "../utils/utils.js";
+import { Label } from "@mui/icons-material";
 
 type FormVals = {
-  sheet: File | null;
-  cutout: File | null;
   pageNumber: string;
   section: string;
   model: string;
@@ -45,6 +45,8 @@ type FormVals = {
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<main.Project>();
+  const [sheet, setSheet] = useState<string>("");
+  const [cutout, setCutout] = useState<string>("");
   const [models, setModels] = useState<main.Model[]>([]);
   const [generatingPDF, setGeneratingPDF] = useState<boolean>(false);
   const [opened, { open, close }] = useDisclosure(false);
@@ -71,15 +73,11 @@ function ProjectPage() {
   const form = useForm<FormVals>({
     mode: "controlled",
     initialValues: {
-      sheet: null,
-      cutout: null,
       pageNumber: "",
       section: "",
       model: "",
     },
     validate: {
-      sheet: (v) => (v ? null : "Sube la foto de la hoja"),
-      cutout: (v) => (v ? null : "Sube la foto de la hoja"),
       pageNumber: (v) =>
         /^\d+$/.test(v) ? null : "Usa solor numeros (1,2,3...)",
       section: isNotEmpty("Sección requerida"),
@@ -98,10 +96,28 @@ function ProjectPage() {
     setProject(await LoadProject(project.id));
   };
 
+  const handleUploadImage = async (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault()
+    const ct = e.currentTarget.id
+    try {
+      switch (ct) {
+        case "sheet":
+          setSheet(await PickImageAndReturnPath())
+          break
+        case "cutout":
+          setCutout(await PickImageAndReturnPath())
+          break
+        default:
+          console.error("no valid id")
+          break
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const handleUpload = async (vals: typeof form.values) => {
     if (
-      !vals.sheet ||
-      !vals.cutout ||
       vals.section === "" ||
       vals.pageNumber === "" ||
       vals.model === "" ||
@@ -112,18 +128,18 @@ function ProjectPage() {
     }
 
     try {
-      const sb64 = await toBase64(vals.sheet);
-      const cb64 = await toBase64(vals.cutout);
       await UploadAsset(project.id, {
         id: assetId.current,
-        sheet: sb64,
-        cutout: cb64,
+        sheet: sheet,
+        cutout: cutout,
         pageNumber: vals.pageNumber,
         section: vals.section,
         model: vals.model,
       });
 
       setProject(await LoadProject(project.id));
+      setSheet("")
+      setCutout("")
       form.reset();
       close();
     } catch (error) {
@@ -227,28 +243,38 @@ function ProjectPage() {
           ))}
           <Modal p="2em" opened={opened} onClose={close} title="Activo">
             <form onSubmit={form.onSubmit((v) => handleUpload(v))}>
-              <FileInput
-                key={form.key("sheet")}
-                required
-                withAsterisk
-                rightSection={<IconFileImport width={25} />}
-                label="Añadir foto de hoja"
-                placeholder="Imagen de la hoja"
-                clearable={true}
-                multiple={false}
-                {...form.getInputProps("sheet")}
-              />
-              <FileInput
-                key={form.key("cutout")}
-                required
-                withAsterisk
-                rightSection={<IconFileImport width={25} />}
-                label="Añadir foto de nota"
-                placeholder="Imagen de la nota"
-                clearable={true}
-                multiple={false}
-                {...form.getInputProps("cutout")}
-              />
+              <Stack>
+                <Label>{sheet}</Label>
+                <Button id="sheet" onClick={handleUploadImage}>
+                  Añadir foto de hoja
+                </Button>
+                <Label>{cutout}</Label>
+                <Button id="sheet" onClick={handleUploadImage}>
+                  Añadir foto de nota
+                </Button>
+              </Stack>
+              {/* <FileInput */}
+              {/*   key={form.key("sheet")} */}
+              {/*   required */}
+              {/*   withAsterisk */}
+              {/*   rightSection={<IconFileImport width={25} />} */}
+              {/*   label="Añadir foto de hoja" */}
+              {/*   placeholder="Imagen de la hoja" */}
+              {/*   clearable={true} */}
+              {/*   multiple={false} */}
+              {/*   {...form.getInputProps("sheet")} */}
+              {/* /> */}
+              {/* <FileInput */}
+              {/*   key={form.key("cutout")} */}
+              {/*   required */}
+              {/*   withAsterisk */}
+              {/*   rightSection={<IconFileImport width={25} />} */}
+              {/*   label="Añadir foto de nota" */}
+              {/*   placeholder="Imagen de la nota" */}
+              {/*   clearable={true} */}
+              {/*   multiple={false} */}
+              {/*   {...form.getInputProps("cutout")} */}
+              {/* /> */}
               <NativeSelect
                 key={form.key("model")}
                 required

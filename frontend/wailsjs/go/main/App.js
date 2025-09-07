@@ -34,6 +34,10 @@ export function LoadProjects() {
   return window['go']['main']['App']['LoadProjects']();
 }
 
+export function PickImageAndReturnPath() {
+  return window['go']['main']['App']['PickImageAndReturnPath']();
+}
+
 export function UploadAsset(arg1, arg2) {
   return window['go']['main']['App']['UploadAsset'](arg1, arg2);
 }
