@@ -12,6 +12,8 @@ export function GeneratePDF(arg1:string):Promise<void>;
 
 export function LoadAssets(arg1:string):Promise<Array<main.AssetMetadata>>;
 
+export function LoadB64Asset(arg1:string):Promise<string>;
+
 export function LoadModels():Promise<Array<main.Model>>;
 
 export function LoadProject(arg1:string):Promise<main.Project>;

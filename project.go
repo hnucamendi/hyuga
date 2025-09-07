@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -417,4 +418,20 @@ func (a *App) PickImageAndReturnPath() (string, error) {
 	}
 
 	return fp, nil
+}
+
+func (a *App) LoadB64Asset(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	var b64 io.Writer
+	_, err = base64.NewEncoder(base64.StdEncoding, b64).Write(b)
+	if err != nil {
+		fmt.Println("TAMO err", err)
+		return "", err
+	}
+
+	return string(b), nil
 }

@@ -22,6 +22,10 @@ export function LoadAssets(arg1) {
   return window['go']['main']['App']['LoadAssets'](arg1);
 }
 
+export function LoadB64Asset(arg1) {
+  return window['go']['main']['App']['LoadB64Asset'](arg1);
+}
+
 export function LoadModels() {
   return window['go']['main']['App']['LoadModels']();
 }

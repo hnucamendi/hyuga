@@ -9,6 +9,7 @@ import {
   GeneratePDF,
   LoadModels,
   PickImageAndReturnPath,
+  LoadB64Asset,
 } from "../../wailsjs/go/main/App";
 import {
   Button,
@@ -28,7 +29,6 @@ import {
   Container,
   NativeSelect,
   LoadingOverlay,
-  MenuLabel,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconFileImport, IconSelector, IconTrash } from "@tabler/icons-react";
@@ -58,7 +58,20 @@ function ProjectPage() {
       setProject(await LoadProject(projectId));
     };
     l();
+    console.log(project?.assets)
   }, [projectId]);
+
+  useEffect(() => {
+    const l = async () => {
+      for (const p of project.assets) {
+        console.log("TAMO", p.cutout)
+        p.cutout = await LoadB64Asset(p.cutout)
+        p.sheet = await LoadB64Asset(p.sheet)
+        p.model = await LoadB64Asset(p.model)
+      }
+    }
+    l()
+  }, [project])
 
   useEffect(() => {
     if (!projectId) return;
@@ -217,7 +230,7 @@ function ProjectPage() {
                     </Group>
                   </Group>
                   <Image
-                    src={toFileURL(as.model)}
+                    src={as.model}
                     alt="Foto de machote"
                     radius="md"
                     fit="contain"
@@ -225,14 +238,14 @@ function ProjectPage() {
                   />
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
                     <Image
-                      src={toFileURL(as.sheet)}
+                      src={as.sheet}
                       alt="Foto de hoja"
                       radius="md"
                       fit="contain"
                       w="100%"
                     />
                     <Image
-                      src={toFileURL(as.cutout)}
+                      src={as.cutout}
                       alt="Foto de nota"
                       radius="md"
                       fit="contain"
