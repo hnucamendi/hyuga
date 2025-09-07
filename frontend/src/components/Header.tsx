@@ -17,9 +17,8 @@ import {
 
 type HeaderProps = {
   createProject?: any;
-  openModal?: any;
   projectId?: string;
-  handleUpload: any;
+  handleUpload?: any;
   handleAddAsset?: any;
   handleProcessPDF?: any;
 };
@@ -27,7 +26,6 @@ type HeaderProps = {
 export default function Header({
   createProject,
   projectId,
-  openModal,
   handleUpload,
   handleAddAsset,
   handleProcessPDF,
