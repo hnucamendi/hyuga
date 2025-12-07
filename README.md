@@ -3,7 +3,7 @@
 Hyuga is a Wails-based desktop utility that helps organize printed assets. You can create projects, attach
 reference photos (hoja, recorte, machote) with metadata, and export a clean A4 PDF package for delivery.
 
-## Core Features
+# Core Features
 
 - **Projects** — create, list and delete projects stored locally under the user's config directory. Each project
   is automatically named using the bundled Spanish adjective/noun dictionaries.
@@ -23,14 +23,19 @@ reference photos (hoja, recorte, machote) with metadata, and export a clean A4 P
 ## Local Development
 
 1. Install the frontend dependencies once:
+
    ```bash
    npm install --prefix frontend
    ```
+
 2. Start the all-in-one dev loop:
+
    ```bash
    wails dev
    ```
+
    This runs the Go backend plus the Vite dev server with hot reload. You can also use `make dev`.
+
 3. Open the spawned desktop window (or navigate to the URL printed by Wails) and iterate on the UI.
 
 The generated TypeScript bindings for Go live in `frontend/wailsjs` and are regenerated automatically by Wails.
