@@ -1,0 +1,67 @@
+<UserControl x:Class="Hyuga.App.Views.ImportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Importar PDF de machotes" FontSize="24" FontWeight="SemiBold" />
+            <TextBlock Text="Selecciona el PDF y confirma las paginas detectadas." Foreground="{StaticResource TextMutedBrush}" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Archivo" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox Text="{Binding DraftPdfPath}" Height="34" Margin="0,0,0,8" />
+                <Button Content="Buscar PDF" Command="{Binding BrowseCommand}" Background="{StaticResource SurfaceMutedBrush}"
+                        Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" />
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#B23A2B" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+                <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,20,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Resumen" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding PageCount, StringFormat=Paginas detectadas: {0}}" />
+                        <TextBlock Text="Formato de salida: A4" Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Margin="0,24,0,0">
+                    <Button Content="Volver" Command="{Binding BackCommand}" Background="{StaticResource SurfaceBrush}"
+                            Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Margin="0,0,12,0" />
+                    <Button Content="Continuar" Command="{Binding ContinueCommand}" />
+                </StackPanel>
+            </StackPanel>
+
+            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1" CornerRadius="12" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Vista previa" FontWeight="SemiBold" Margin="0,0,0,12" />
+                    <Border Background="{StaticResource SurfaceMutedBrush}" CornerRadius="8" Height="360">
+                        <Grid>
+                            <Image x:Name="PreviewImage" Source="{Binding PreviewImage}" Stretch="Uniform" />
+                            <TextBlock x:Name="PreviewPlaceholder" Text="Vista previa del PDF"
+                                       Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" Visibility="Collapsed" />
+                            <Grid.Triggers>
+                                <DataTrigger Binding="{Binding PreviewImage}" Value="{x:Null}">
+                                    <Setter TargetName="PreviewImage" Property="UIElement.Visibility" Value="Collapsed" />
+                                    <Setter TargetName="PreviewPlaceholder" Property="UIElement.Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Grid.Triggers>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

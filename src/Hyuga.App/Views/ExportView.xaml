@@ -1,0 +1,32 @@
+<UserControl x:Class="Hyuga.App.Views.ExportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Exportacion lista" FontSize="24" FontWeight="SemiBold" />
+            <TextBlock Text="Tu PDF pulido esta listo para guardar o imprimir." Foreground="{StaticResource TextMutedBrush}" />
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="20">
+            <StackPanel>
+                <TextBlock Text="{Binding OutputPath, StringFormat=Archivo: {0}}" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                    <Button Content="Guardar como" Command="{Binding SaveAsCommand}" Background="{StaticResource SurfaceBrush}"
+                            Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Margin="0,0,12,0" />
+                    <Button Content="Abrir carpeta" Command="{Binding OpenFolderCommand}" Background="{StaticResource SurfaceBrush}"
+                            Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Margin="0,0,12,0" />
+                    <Button Content="Imprimir" Command="{Binding PrintCommand}" />
+                </StackPanel>
+
+                <Button Content="Nuevo lote" Command="{Binding StartNewBatchCommand}" Margin="0,20,0,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
